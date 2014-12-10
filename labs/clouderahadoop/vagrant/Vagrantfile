@@ -1,0 +1,252 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+zk_servers = [
+    {
+        :ip => '10.100.100.20',
+    },
+    {
+        :ip => '10.100.100.21',
+    },
+    {
+        :ip => '10.100.100.22',
+    }
+]
+
+hadoop_namenodes = [
+    {
+        :ip => '10.100.100.60',
+    },
+    {
+        :ip => '10.100.100.61',
+    }
+]
+
+hadoop_journalnodes = [
+    {
+        :ip => '10.100.100.70',
+    },
+    {
+        :ip => '10.100.100.71',
+    },
+    {
+        :ip => '10.100.100.72',
+    }
+]
+
+hadoop_resourcemanagers = [
+    {
+        :ip => '10.100.100.80',
+    }
+]
+
+
+hadoop_datanodes = [
+    {
+        :ip => '10.100.100.90',
+    },
+    {
+        :ip => '10.100.100.91',
+    }
+]
+
+zookeeper_dir = "/deploy/repo/labs/zookeeper"
+hadoop_lab_dir = "/deploy/repo/labs/clouderahadoop"
+
+$preinstall = <<EOF
+    if [[ ! $(ls /etc/init.d/ | grep hadoop) ]]; then 
+        apt-get update
+        #apt-get -y install curl git-core build-essential ruby1.9.3
+        gem install bundler --no-ri --no-rdoc
+        cd "#{zookeeper_dir}/chef" && bundle install
+    fi
+EOF
+
+# Figuring out if there are any active zookeeper nodes
+# to configure hadoop with them
+active_zks = []
+
+zk_servers.each_with_index do |server, index|
+    status=`vboxmanage list runningvms | grep -o "zookeeper-#{index}" | awk -F\- '{print $3}'`
+    if not status.empty?
+        active_zks << server[:ip]
+    end
+end
+
+# Find running namenodes
+namenodes = []
+
+hadoop_namenodes.each_with_index do |server, index|
+    status=`vboxmanage list runningvms | grep -o "hadoop-namenode-#{index}" | awk -F\- '{print $3}'`
+    if not status.empty?
+        namenodes << server[:ip]
+    end
+end
+
+
+# Find running journalnodes
+journalnodes = []
+
+hadoop_journalnodes.each_with_index do |server, index|
+    status=`vboxmanage list runningvms | grep -o "hadoop-journalnode-#{index}" | awk -F\- '{print $3}'`
+    if not status.empty?
+        journalnodes << server[:ip]
+    end
+end
+
+# Find running resourcemanagers
+resourcemanagers = []
+
+hadoop_resourcemanagers.each_with_index do |server, index|
+    status=`vboxmanage list runningvms | grep -o "hadoop-resourcemanager-#{index}" | awk -F\- '{print $3}'`
+    if not status.empty?
+        resourcemanagers << server[:ip]
+    end
+end
+
+
+# Find running datanodes
+datanodes = []
+
+hadoop_datanodes.each_with_index do |server, index|
+    status=`vboxmanage list runningvms | grep -o "hadoop-datanode-#{index}" | awk -F\- '{print $3}'`
+    if not status.empty?
+        datanodes << server[:ip]
+    end
+end
+
+
+Vagrant.configure("2") do |config|
+
+    # Nameservers
+    hadoop_namenodes.each_with_index do |server, index|
+        server_name = "hn" + index.to_s
+
+        config.vm.define server_name do |config|
+            config.vm.box = "ubuntu/trusty64"
+
+            config.vm.synced_folder "..", "#{hadoop_lab_dir}"
+
+            config.vm.network :private_network, ip: server[:ip], netmask: "255.255.0.0"
+
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "hadoop-namenode-" + index.to_s + "_#{Time.now.to_i}"
+                vb.customize ["modifyvm", :id, "--memory", "2560"]
+                vb.cpus = 3
+            end
+
+            config.omnibus.chef_version = :latest
+
+            config.vm.provision :shell, inline: $preinstall
+           
+            config.vm.provision :shell do |shell|
+            shell.inline = "zk_servers=#{active_zks.join(',')} \
+                        namenodes=#{namenodes.join(',')} \
+                        journalnodes=#{journalnodes.join(',')} \
+                        datanodes=#{datanodes.join(',')} \
+                        chef-solo -c #{hadoop_lab_dir}/chef/solo.rb \
+                        -j #{hadoop_lab_dir}/chef/solo_namenode.json"
+            end
+
+        end
+    end
+
+    # Journalnodes
+    hadoop_journalnodes.each_with_index do |server, index|
+        server_name = "jn" + index.to_s
+
+        config.vm.define server_name do |config|
+            config.vm.box = "ubuntu/trusty64"
+
+            config.vm.synced_folder "..", "#{hadoop_lab_dir}"
+
+            config.vm.network :private_network, ip: server[:ip], netmask: "255.255.0.0"
+
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "hadoop-journalnode-" + index.to_s + "_#{Time.now.to_i}"
+                vb.customize ["modifyvm", :id, "--memory", "512"]
+                vb.cpus = 2
+            end
+
+            config.omnibus.chef_version = :latest
+
+            config.vm.provision :shell, inline: $preinstall
+
+            config.vm.provision :shell do |shell|
+            shell.inline = "zk_servers=#{active_zks.join(',')} \
+                        namenodes=#{namenodes.join(',')} \
+                        journalnodes=#{journalnodes.join(',')} \
+                        chef-solo -c #{hadoop_lab_dir}/chef/solo.rb \
+                        -j #{hadoop_lab_dir}/chef/solo_journalnode.json"
+            end
+
+        end
+    end
+
+    # Resourcemanagers
+    hadoop_resourcemanagers.each_with_index do |server, index|
+        server_name = "rm" + index.to_s
+
+        config.vm.define server_name do |config|
+            config.vm.box = "ubuntu/trusty64"
+
+            config.vm.synced_folder "..", "#{hadoop_lab_dir}"
+
+            config.vm.network :private_network, ip: server[:ip], netmask: "255.255.0.0"
+
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "hadoop-resourcemanager-" + index.to_s + "_#{Time.now.to_i}"
+                vb.customize ["modifyvm", :id, "--memory", "512"]
+                vb.cpus = 2
+            end
+
+            config.omnibus.chef_version = :latest
+
+            config.vm.provision :shell, inline: $preinstall
+
+            config.vm.provision :shell do |shell|
+            shell.inline = "zk_servers=#{active_zks.join(',')} \
+                        namenodes=#{namenodes.join(',')} \
+                        journalnodes=#{journalnodes.join(',')} \
+                        resourcemanagers=#{resourcemanagers.join(',')} \
+                        chef-solo -c #{hadoop_lab_dir}/chef/solo.rb \
+                        -j #{hadoop_lab_dir}/chef/solo_resourcemanager.json"
+            end
+
+        end
+    end
+
+    # Datanodes
+    hadoop_datanodes.each_with_index do |server, index|
+        server_name = "dn" + index.to_s
+
+        config.vm.define server_name do |config|
+            config.vm.box = "ubuntu/trusty64"
+
+            config.vm.synced_folder "..", "#{hadoop_lab_dir}"
+
+            config.vm.network :private_network, ip: server[:ip], netmask: "255.255.0.0"
+
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "hadoop-datanode-" + index.to_s + "_#{Time.now.to_i}"
+                vb.customize ["modifyvm", :id, "--memory", "512"]
+                vb.cpus = 2
+            end
+
+            config.omnibus.chef_version = :latest
+
+            config.vm.provision :shell, inline: $preinstall
+
+            config.vm.provision :shell do |shell|
+            shell.inline = "zk_servers=#{active_zks.join(',')} \
+                        namenodes=#{namenodes.join(',')} \
+                        datanodes=#{datanodes.join(',')} \
+                        resourcemanagers=#{resourcemanagers.join(',')} \
+                        chef-solo -c #{hadoop_lab_dir}/chef/solo.rb \
+                        -j #{hadoop_lab_dir}/chef/solo_datanode.json"
+            end
+
+        end
+    end
+
+end

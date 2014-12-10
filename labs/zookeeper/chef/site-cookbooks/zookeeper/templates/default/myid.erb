@@ -1,0 +1,9 @@
+<% @ip_addresses = Chef::IPFinder.find(node, :private_ipv4) %>
+<% @ip_addresses.each do |ip| %>
+    <% if not @zk_servers.nil? %>
+        <% @zk_servers = @zk_servers.split(',') %>
+        <% @myid = @zk_servers.include?(ip) ? @zk_servers.index(ip) : nil %>
+        <% break if not @myid.nil? %>
+    <% end %>
+<% end %>
+<%= @myid %>

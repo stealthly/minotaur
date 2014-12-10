@@ -1,0 +1,12 @@
+<% if @zk_servers.to_s.empty? %>
+    <% @zk_servers = ['127.0.0.1'] %>
+<% else %>
+    <% @zk_servers = @zk_servers.split(',') %>
+<% end %>
+<%
+  zk_url_list = []
+  @zk_servers.each do |zk_server|
+    zk_url_list << "#{zk_server}:#{@zookeeper_port}"
+  end
+%>
+<%= 'zk://' + zk_url_list.join(',') + '/' + @zookeeper_path %>

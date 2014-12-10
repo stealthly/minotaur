@@ -1,0 +1,5 @@
+site 'https://supermarket.getchef.com/api/v1'
+
+cookbook 'apt', '~> 2.6.0'
+cookbook 'hostsfile', '~> 2.4.5'
+cookbook 'zookeeper', :git => 'https://github.com/SimpleFinance/chef-zookeeper.git'

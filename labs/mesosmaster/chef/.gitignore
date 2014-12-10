@@ -1,0 +1,8 @@
+Cheffile.lock
+Gemfile.lock
+/cookbooks/
+/tmp/
+/doc/
+/nodes/
+/environments/
+

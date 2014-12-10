@@ -1,0 +1,116 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+zk_servers = [
+    {
+        :ip => '10.100.100.20',
+    },
+    {
+        :ip => '10.100.100.21',
+    },
+    {
+        :ip => '10.100.100.22',
+    }
+]
+
+kafka_brokers = [
+    {
+        :ip => '10.100.100.30',
+    },
+    {
+        :ip => '10.100.100.31',
+    },
+    {
+        :ip => '10.100.100.32',
+    }
+]
+
+kafka_producers = [
+    {
+        :ip => '10.100.100.210',
+    },
+    {
+        :ip => '10.100.100.211',
+    },
+    {
+        :ip => '10.100.100.212',
+    }
+]
+
+kafka_lab_dir = "/deploy/repo/labs/gokafkaproducer"
+
+$preinstall = <<EOF
+    if [[ ! $(git --version) ]]; then 
+        apt-get update
+        apt-get -y install curl git-core ruby1.9.1-dev build-essential
+        gem install bundler --no-ri --no-rdoc
+        cd "#{kafka_lab_dir}/chef" && bundle install
+    fi
+EOF
+
+Vagrant.configure("2") do |config|
+
+    kafka_producers.each_with_index do |server, index|
+        server_name = "kp" + index.to_s
+
+        config.vm.define server_name do |config|
+            config.vm.box = "ubuntu/trusty64"
+
+            config.vm.synced_folder "..", "#{kafka_lab_dir}"
+
+            config.vm.hostname = "kafka-producer-" + index.to_s + ".vagrant.stealth.ly"
+
+            config.vm.network :private_network, ip: server[:ip], netmask: "255.255.0.0"
+
+            config.vm.provider :virtualbox do |vb|
+                vb.name = "kafka-producer-" + index.to_s + "_#{Time.now.to_i}"
+                vb.customize ["modifyvm", :id, "--memory", "1024"]
+            end
+
+            config.omnibus.chef_version = :latest
+
+            config.vm.provision :shell, inline: $preinstall
+           
+            # Figuring out if there are any active zookeeper nodes
+            # to configure mesos with them 
+            active_zks = []
+            active_brokers = []
+            zk_servers.each_with_index do |server, index|
+                status=`vboxmanage list runningvms | grep -o "zookeeper-#{index}" | awk -F\- '{print $3}'`
+                if not status.empty?
+                    active_zks << server[:ip]
+                end
+            end
+            # If no zks found - fallback to zks on master node(s)
+            kafka_brokers.each_with_index do |server, index|
+                status=`vboxmanage list runningvms | grep -o "kafka-broker-#{index}" | awk -F\- '{print $3}'`
+                if not status.empty?
+                    active_brokers << server[:ip]
+                end
+            end
+
+            config.vm.provision :shell do |shell|
+            shell.inline = "zk_servers=#{active_zks.join(',')} \
+                        kafka_brokers=#{active_brokers.join(',')} \
+                        chef-solo -c #{kafka_lab_dir}/chef/solo.rb \
+                        -j #{kafka_lab_dir}/chef/solo.json"
+            end
+
+        end
+    end
+end

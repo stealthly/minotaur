@@ -1,0 +1,16 @@
+SITE
+  remote: http://community.opscode.com/api/v1
+  specs:
+    apt (2.6.0)
+    hadoop (1.6.1)
+      apt (>= 0.0.0)
+      yum (>= 3.0)
+    hostsfile (2.4.5)
+    java (1.28.0)
+    yum (3.4.1)
+
+DEPENDENCIES
+  hadoop (~> 1.6.1)
+  hostsfile (~> 2.4.5)
+  java (~> 1.21)
+

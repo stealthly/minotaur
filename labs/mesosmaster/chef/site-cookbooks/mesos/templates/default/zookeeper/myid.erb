@@ -1,0 +1,5 @@
+<% if not @zk_servers.to_s.empty? %>
+    <% @zk_servers = @zk_servers.split(',') %>
+    <% @myid = @zk_servers.include?(@ip_address) ? @zk_servers.index(@ip_address) : nil %>
+<% end %>
+<%= @myid %>

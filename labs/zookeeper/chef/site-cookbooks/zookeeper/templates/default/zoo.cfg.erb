@@ -1,0 +1,11 @@
+clientPort=2181
+dataDir=<%= node[:zookeeper][:data_dir] %>
+tickTime=2000
+initLimit=5
+syncLimit=2
+<% if not @zk_servers.nil? %>
+    <% @zk_servers = @zk_servers.split(',') %>
+    <% @zk_servers.each_with_index do |server, index| %>
+server.<%= index %>=<%= server %>:<%= node[:zookeeper][:peer_port] %>:<%= node[:zookeeper][:leader_port] %>
+    <% end %>
+<% end %>

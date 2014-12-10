@@ -1,0 +1,3 @@
+{
+  "run_list": [ "recipe[go_kafka_producer]", "recipe[go_kafka_producer::monitoring]" ]
+}

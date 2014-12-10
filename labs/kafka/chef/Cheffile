@@ -1,0 +1,5 @@
+site 'https://supermarket.getchef.com/api/v1'
+
+cookbook 'hostsfile', '~> 2.4.5'
+cookbook 'kafka_broker', '~>0.1.0'
+cookbook 'zookeeper', :git => 'https://github.com/SimpleFinance/chef-zookeeper.git'

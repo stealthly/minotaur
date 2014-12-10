@@ -1,0 +1,4 @@
+site 'http://community.opscode.com/api/v1'
+
+cookbook 'docker', '~> 0.36.0'
+cookbook 'kafka_broker', '~>0.1.0'

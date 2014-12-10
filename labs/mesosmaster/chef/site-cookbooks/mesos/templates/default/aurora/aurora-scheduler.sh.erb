@@ -1,0 +1,54 @@
+#!/bin/bash
+AURORA_HOME=<%= @aurora_home %>
+
+# Flags controlling the JVM.
+JAVA_OPTS=(
+  -Xmx<%= ( (node['memory']['total'][0..-3].to_i/2).floor / 1024 ) %>m
+  -Xms<%= ( (node['memory']['total'][0..-3].to_i/2).floor / 1024 ) %>m
+  -Djava.library.path=/usr/local/lib
+)
+
+# Flags controlling the scheduler.
+AURORA_FLAGS=(
+  <% if not @mesos_masters.to_s.empty? %>
+      <% @quorum_size = ( (@mesos_masters.split(',').length/2).floor + 1 ) %>
+  <% else %>
+      <% @quorum_size = 1 %>
+  <% end %>
+
+  <% if @zk_servers.to_s.empty? %>
+      <% @zk_servers = ['127.0.0.1'] %>
+  <% else %>
+      <% @zk_servers = @zk_servers.split(',') %>
+  <% end %>
+  <%
+    zk_url_list = []
+    @zk_servers.each do |zk_server|
+      zk_url_list << "#{zk_server}:#{@zookeeper_port}"
+    end
+  %>
+  -native_log_quorum_size=<%= @quorum_size %>
+  -cluster_name=<%= node[:mesos][:cluster_name] %>
+  -http_port=<%= node[:mesos][:aurora][:http_port] %>
+  -zk_endpoints=<%= zk_url_list.join(',') %>
+  -mesos_master_address=<%= `cat /etc/mesos/zk` %>
+
+  -serverset_path=/aurora/scheduler
+
+  -native_log_zk_group_path=/aurora/replicated-log
+
+  -native_log_file_path="$AURORA_HOME/db"
+  -backup_dir="$AURORA_HOME/backups"
+
+  -thermos_executor_path=/dev/null
+  -gc_executor_path=/dev/null
+
+  -vlog=INFO
+  -logtostderr
+)
+
+# Environment variables controlling libmesos
+export GLOG_v=1
+export LIBPROCESS_PORT=8083
+
+JAVA_OPTS="${JAVA_OPTS[*]}" exec "$AURORA_HOME/bin/aurora-scheduler" "${AURORA_FLAGS[@]}"
