@@ -1,0 +1,289 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Bastion instance in a public subnet that serves as the single point of SSH ingress to a private subnet",
+    "Parameters": {
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "String",
+            "Default": "admin",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[-_ a-zA-Z0-9]*",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "Environment": {
+            "Description": "Environment in which the instances belong",
+            "Type": "String",
+            "AllowedValues": [
+                "bdoss-dev",
+                "dummy"
+            ],
+            "ConstraintDescription": "must be one of prod, test, or dev"
+        },
+        "VpcId": {
+            "Description": "ID of the VPC",
+            "Type": "String"
+        },
+        "AvailabilityZone": {
+            "Description": "Availability zone of the subnets",
+            "Type": "String"
+        },
+        "PublicSubnetId": {
+            "Description": "ID of the public subnet",
+            "Type": "String"
+        },
+        "PrivateSubnetId": {
+            "Description": "ID of the private subnet",
+            "Type": "String"
+        },
+        "InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "m1.small",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "cc1.4xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "AsgTopicArn": {
+            "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        }
+    },
+    "Mappings": {
+        "BastionAmi": {
+            "us-east-1": {
+                "Ami": "ami-50842d38"
+            }
+        }
+    },
+    "Resources": {
+        "ElasticIp": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "PublicNetworkInterface" : {
+            "Type" : "AWS::EC2::NetworkInterface",
+            "Properties" : {
+                "GroupSet": [
+                    {
+                        "Ref": "PublicSecurityGroup"
+                    }
+                ],
+                "SubnetId": {
+                    "Ref": "PublicSubnetId"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "bastion",
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ElasticIpAssociation": {
+            "Type": "AWS::EC2::EIPAssociation",
+            "Properties": {
+                "AllocationId" : {
+                    "Fn::GetAtt" : [
+                        "ElasticIp",
+                        "AllocationId"
+                    ]
+                },
+                "NetworkInterfaceId": {
+                    "Ref": "PublicNetworkInterface"
+                }
+            }
+        },
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    "bastion"
+                ]
+            }
+        },
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "BastionAmi",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "Ami"
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "PrivateSecurityGroup"
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1",
+                                "\n",
+                                "REGION_ID=\"", { "Ref": "AWS::Region" }, "\"\n",
+                                "ENVIRONMENT=\"", { "Ref": "Environment" }, "\"\n",
+                                "PUBLIC_NETWORK_INTERFACE_ID=\"", { "Ref": "PublicNetworkInterface" }, "\"\n",
+                                "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "\n",
+                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nBASTION_PATH=\"infrastructure/aws/bastion\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Attach public network interface\naws ec2 attach-network-interface --region \"$REGION_ID\" --instance-id \"$INSTANCE_ID\" --network-interface-id \"$PUBLIC_NETWORK_INTERFACE_ID\" --device-index=1\n\nyum -y install git-core\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone git@github.com:stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Run Chef\nenvironment=$ENVIRONMENT chef-solo -c \"$REPO_DIR/$BASTION_PATH/chef/solo.rb\" -j \"$REPO_DIR/$BASTION_PATH/chef/solo.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "InstanceGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "PrivateSubnetId"
+                    }
+                ],
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "DesiredCapacity": "1",
+                "MinSize": "1",
+                "MaxSize": "1",
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "AsgTopicArn"
+                    },
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "bastion",
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+        "PublicSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable public access to the Bastion host",
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "PrivateSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable private access to the Bastion host",
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WaitForInstanceWaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle",
+            "Properties": {
+            }
+        },
+        "WaitForInstance": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "InstanceGroup",
+            "Properties": {
+                "Handle": {
+                    "Ref": "WaitForInstanceWaitHandle"
+                },
+                "Timeout": "600"
+            }
+        }
+    }
+}

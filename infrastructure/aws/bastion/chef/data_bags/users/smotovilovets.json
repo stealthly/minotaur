@@ -1,0 +1,6 @@
+{
+  "id"        : "smotovilovets",
+  "comment"   : "Sergey Motovilovets",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCnNRZdp3hvzKvnhRvvQ5k7J/wwjnREyxSUoPQ8cw2HafjyAzug7jCPf/2J6L+jwcc4b3GsN/ttfAx6zS+rT+oaCyFvhuWLjXS7aiGl04SvMRl0wlB6uPV0iodpmbASZKwpy3QK/57LX4UzR8m9N/eCxvCud7d+y2fdVLqN/3S+KK0+cI0CA1McYPdThB16YfW6qxMkAz6HWiHzOkXWe84HneCKy5HGmu+gXVzhuLixJM0veLcSPa215VHS/5WF5Tocrd0baBrNyLw3AhI9N8QbQ/YNy1PA3kDW+oihsAU+B1ReyX4//JYUfKm6KeR+i+MuvbrfVkzsHtwlr1nEov+j"],
+  "environments": ["vagrant","bdoss-dev"]
+}

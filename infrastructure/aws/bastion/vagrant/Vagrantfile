@@ -1,0 +1,47 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+# 
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "ubuntu/trusty64"
+
+    config.vm.synced_folder "..", "/deploy/repo/infrastructure/aws/bastion/"
+
+    config.vm.hostname = "bastion.stealth.ly"
+
+    config.vm.network :private_network, ip: "10.100.100.10", netmask: "255.255.0.0"
+    config.vm.network :forwarded_port, guest: 22, host: 10022
+
+    config.vm.provider :virtualbox do |vb|
+        vb.name = "bastion_#{Time.now.to_i}"
+        vb.customize ["modifyvm", :id, "--memory", "256"]
+        vb.customize ["modifyvm", :id, "--natdnsproxy1", "off"]
+        vb.customize ["modifyvm", :id, "--natdnshostresolver1", "off"]
+    end
+    config.omnibus.chef_version = :latest
+
+    config.vm.provision :shell, :inline => "apt-get update"
+
+    VAGRANT_JSON = JSON.parse(Pathname(__FILE__).dirname.join('../chef/', 'solo.json').read)
+    config.vm.provision :chef_solo do |chef|
+    	chef.cookbooks_path = [ '../chef/cookbooks', '../chef/site-cookbooks' ]
+        chef.data_bags_path = "../chef/data_bags"
+        chef.json = VAGRANT_JSON
+        chef.verbose_logging = true
+	chef.log_level = :debug
+    end
+end

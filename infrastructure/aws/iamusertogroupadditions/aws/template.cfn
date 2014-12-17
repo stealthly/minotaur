@@ -1,0 +1,48 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "All IAM user to group additions",
+    "Resources": {
+        "Administrators": {
+            "Type": "AWS::IAM::UserToGroupAddition",
+            "Properties": {
+                "GroupName": "administrators",
+                "Users": [
+                    "aacquanita",
+                    "tchen",
+                    "smotovilovets"
+                ]
+            }
+        },
+        "Trusted": {
+            "Type": "AWS::IAM::UserToGroupAddition",
+            "Properties": {
+                "GroupName": "trusted",
+                "Users": [
+                    "smotov",
+                    "abiletskyi",
+                    "dpekar",
+                    "ilyutov",
+                    "snovachenko"
+                ]
+            }
+        },
+        "Customers": {
+            "Type": "AWS::IAM::UserToGroupAddition",
+            "Properties": {
+                "GroupName": "customers",
+                "Users": [
+                    "smotov"
+                ]
+            }
+        },
+        "Jenkins": {
+            "Type": "AWS::IAM::UserToGroupAddition",
+            "Properties": {
+                "GroupName": "jenkins",
+                "Users": [
+                    "jenkins"
+                ]
+            }
+        }
+    }
+}

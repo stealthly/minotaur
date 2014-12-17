@@ -1,0 +1,417 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "All IAM policies",
+    "Resources": {
+        "FullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "full-access",
+                "Groups": [
+                    "administrators"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "*",
+                            "Resource" : "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "Ec2FullAccessWithoutKeyPairs": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "ec2-full-access-without-key-pairs",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "ec2:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Effect": "Deny",
+                            "Action": [
+                                "ec2:CreateKeyPair",
+                                "ec2:DeleteKeyPair",
+                                "ec2:ImportKeyPair"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "AutoscalingFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "autoscaling-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "autoscaling:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "ElasticLoadBalancingFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "elastic-load-balancing-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "elasticloadbalancing:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "CloudWatchFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "cloudwatch-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "cloudwatch:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "CloudFormationFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "cloudformation-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "cloudformation:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "Route53FullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "route53-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "route53:*",
+                            "Resource": [
+                                "*",
+                                "arn:aws:route53:::hostedzone/*",
+                                "arn:aws:route53:::change/*"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "SnsFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "sns-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "sns:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "ReadOnlyIamAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "read-only-iam-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "iam:List*",
+                                "iam:Get*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "ManageInstanceProfilesAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "manage-instance-profiles-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "iam:AddRoleToInstanceProfile",
+                                "iam:CreateInstanceProfile",
+                                "iam:DeleteInstanceProfile",
+                                "iam:GetInstanceProfile",
+                                "iam:ListInstanceProfiles",
+                                "iam:ListInstanceProfilesForRole",
+                                "iam:RemoveRoleFromInstanceProfile"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "CloudFrontFullAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "cloudfront-full-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "cloudfront:*",
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "Ec2DescribeInstances": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "ec2-describe-instances",
+                "Roles": [
+                    "generic-dev"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeInstances"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "PassDevRoles": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "pass-dev-roles",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": "iam:PassRole",
+                            "Resource": [
+                                "arn:aws:iam::*:role/generic-dev"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "FullS3BucketsAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "full-s3-buckets-access",
+                "Groups": [
+                    "trusted"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "ReadOnlyS3DeployBucketAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "read-only-s3-deploy-bucket-access",
+                "Roles": [
+                    "generic-dev"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:List*"
+                            ],
+                            "Resource": "arn:aws:s3:::bdoss-deploy"
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:GetObject*"
+                            ],
+                            "Resource": "arn:aws:s3:::bdoss-deploy/*"
+                        }
+                    ]
+                }
+            }
+        },
+        "FullS3DeployBucketAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "full-s3-deploy-bucket-access",
+                "Groups": [
+                    "jenkins"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:*"
+                            ],
+                            "Resource": [ "arn:aws:s3:::bdoss-deploy", "arn:aws:s3:::bdoss-deploy/*" ]
+                        }
+                    ]
+                }
+            }
+        },
+        "AttachNetworkInterfaceAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "attach-network-interface-access",
+                "Roles": [
+                    "bastion",
+                    "generic-dev"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:AttachNetworkInterface"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "DescribeNetworkInterfaceAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "describe-network-interfaces-access",
+                "Roles": [
+                    "bastion",
+                    "generic-dev"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeNetworkInterfaces"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "AttachVolumeAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "attach-volume-access",
+                "Roles": [
+                    "bastion"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:AttachVolume"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "DescribeVolumesAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "describe-volumes-access",
+                "Roles": [
+                    "bastion"
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeVolumes"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

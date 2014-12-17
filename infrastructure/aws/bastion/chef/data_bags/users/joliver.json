@@ -1,0 +1,6 @@
+{
+  "id"        : "joliver",
+  "comment"   : "James Oliver",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDKvC1JsVcClEBCzEo5QqJrIEchRUSRsaHdtXq0G/wRtsMqDPwaUGBihTITJXGVqeR7i8tKHmp3K0ywmmTVDELWW65ws7NWzGf5UDBAbSUWbqj2yt94FMNtsYcdP+NMljuedhUh8xz761+ZcWOsiFUlOC5lbwppsfBuPnwHL+93DQ3+Bq5VoSlE6bci+s9XkqvMfGOx8JS3zmkyk98JD9Qw7IDbTiXSnbLTlZqCt28HolTIPm8WZcajvV5XwfLk7bXLVHCndXnKeetdUQ9hvbmr43RxH5TjeBPoqdqyLyl8Qxt6a63/mBdTZFrjTPnbzboiiGVytShQPO5b533JSwpf james.oliver@stealth.ly"],
+  "environments": ["vagrant","bdoss-dev"]
+}

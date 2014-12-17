@@ -1,0 +1,20 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "SNS topic",
+    "Parameters": {
+        "TopicName": {
+            "Description": "Name of the topic to be created",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "Topic": {
+            "Type" : "AWS::SNS::Topic",
+            "Properties" : {
+                "TopicName" : {
+                    "Ref": "TopicName"
+                }
+            }
+        }
+    }
+}

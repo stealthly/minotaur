@@ -23,3 +23,5 @@ if Chef::VersionConstraint.new("< 11.8.0").include?(Chef::VERSION)
 else
   role_path []
 end
+
+Chef::Config.ssl_verify_mode = :verify_none

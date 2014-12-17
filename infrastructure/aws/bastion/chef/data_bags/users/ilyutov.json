@@ -1,0 +1,6 @@
+{
+  "id"        : "ilyutov",
+  "comment"   : "Ivan Lyutov",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/Zb3JMhau1c8edExsMdAKWxqa+SVN8D7pIVcLG8hCJWuxiOswId99jI7qL9MczFECvDaNVJ0m+EF0WGSN+3SAsKImihciPaWPcqOc4ILhaGOmZ8ghRTMhqVUvOy3NQrwCHcuo3rxwvHTJbMF7EX9jW5rQ6/L6csgLi/dijICavipoazGHU+7DKQcFpeDtUK5vYaEhostxQG58FAAO4J9wEnajVUtY7d72u03Rqc1/cOq/EW4ro04ST3GgPGeWq0w+RrcBEHraH280zYHA8Z7lGF4TZdZjJM6CqSRPMYdi866Nfsw79kOIOHb9yPLk6KQ8I1IybCGnZv8OJFtb5xd1 ivanlyutov@gmail.com"],
+  "environments": ["vagrant","bdoss-dev"]
+}

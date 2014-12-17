@@ -16,15 +16,20 @@
 # limitations under the License.
 from boto import cloudformation as cfn, sns, vpc
 from boto.exception import BotoServerError
-import os, sys, json
+import os, sys
 
 vpc_provider = "aws"
 template = "template.cfn"
 max_template_size = 307200
+with open("/root/.aws/config") as f:
+	for line in f.readlines():
+		if line.startswith('aws_access_key_id'):
+			aws_access_key_id = line.split()[-1]
+		elif line.startswith('aws_secret_access_key'):
+			aws_secret_access_key = line.split()[-1]
 
 class Lab(object):
-	def __init__(self, environment, deployment, region, zone, 
-		aws_access_key_id, aws_secret_access_key):
+	def __init__(self, environment, deployment, region, zone, template=template):
 		# Create connections to AWS components
 		self.cfn_connection = cfn.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 		self.sns_connection = sns.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
@@ -58,7 +63,7 @@ class Lab(object):
 					template_body=self.template_body, parameters=self.parameters,
 					notification_arns=self.notification_arns, disable_rollback=True)
 		except BotoServerError as e:
-			print "({0}) {1}:\n{2}\nError deploying.".format(e.status, e.reason, e.body)
+			print "({0}) {1}:\n{2}\nError deploying. Error message: {3}".format(e.status, e.reason, e.body, e.message)
 			sys.exit(1)
 		print "Stack deployed."
 		return stack

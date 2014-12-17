@@ -1,0 +1,6 @@
+{
+  "id"        : "jstein",
+  "comment"   : "Joe Stein",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDXu//KTHErGpfNHnad/MrPar6ABhdddF9Qa2A9a1NZMnues40QOdQHfWUPVjpc/eM4tNkkahmvdas7qboWoZ578LucqoD/qHh+r68zJfbMcQs9j5wdKfoNC2VYSsFzH0oySXgqC5qkFqKukLBx5sxt5c1PpMPOEuwIyzE0YGRp2sR8LUG34NxhiK2SHPXIlpR8sjFhKBgMFdrqNNJbT/mvXLrgE4jKYagfCo/7jj0nXGBnp7BhMKHpsNosx8MP1OnrUbPM1OR/Qgcf1chicM+abEUJH1DBgg6DusAZW5b+1in9DkQuNUz5nFpbtK3m8CvR/JK9rukXv4GzEwgEGdTF joe.stein@stealth.ly"],
+  "environments": ["vagrant","bdoss-dev"]
+}

@@ -1,0 +1,6 @@
+{
+  "id"        : "okushchenko",
+  "comment"   : "Oleksandr Kushchenko",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4I0SK79OO2zV0+bSiAKETzB1jfsSg98L2H6V+E9UAbZQEVy2zUmyEFV4pXkXU6k2vkT72+/+OROvq397OMY2pld55te53dMCzHVpHpP0nKJtI8dgd1jqb4UeTy5YZP1JQB5M2oIY+mpe7Am3NbaIlm/3ZJJirUFX1zDCEQsP6qtSMaTLSFo5L5bTh23ov5BgxO4ASBduyWSTHBVWOT/3x5clp8Sb6toZVpHXVJMILOYHNIZVwyfm5tH/fNgPZv/zBYnkisFVXOK9jYHWXb0MLfs3NJr3uLzIT8pVhxioq6MSIMmk1n6frMvlB6SqKjzVZw1BI6lzl/ni6rAnR5pmf okushchenko@cogniance.com"],
+  "environments": ["vagrant","bdoss-dev","dummy"]
+}

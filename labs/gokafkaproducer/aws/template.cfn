@@ -1,0 +1,269 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Kafka producer instances for the deployment",
+    "Parameters": {
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[-_ a-zA-Z0-9]*",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "Deployment": {
+            "Description": "Deployment in which the instances belong",
+            "Type": "String"
+        },
+        "Environment": {
+            "Description": "Environment in which the instances belong",
+            "Type": "String",
+            "AllowedValues": [
+                "bdoss-dev",
+                "dummy"
+            ],
+            "ConstraintDescription": "must be either bdoss-dev or some other environment"
+        },
+        "VpcId": {
+            "Description": "ID of the VPC",
+            "Type": "String"
+        },
+        "AvailabilityZone": {
+            "Description": "Availability zone of the subnets",
+            "Type": "String"
+        },
+        "PublicSubnetId": {
+            "Description": "ID of the public subnet",
+            "Type": "String"
+        },
+        "NumberOfNodes": {
+            "Description": "Number of kafka producer nodes to be deployed",
+            "Type": "String",
+            "Default": "1"
+        },
+        "InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "m1.small",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "cc1.4xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "ProducerUrl": {
+            "Description": "Kafka producer binary to be deployed",
+            "Type": "String",
+            "Default": ""
+        },
+        "AsgTopicArn": {
+            "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        }
+    },
+    "Mappings": {
+        "UbuntuTrustyAmi": {
+            "us-east-1": {
+                "Ami": "ami-d0ba0cb8"
+            }
+        }
+    },
+    "Resources": {
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    "generic-dev"
+                ]
+            }
+        },
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "UbuntuTrustyAmi",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "Ami"
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "PublicSecurityGroup"
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "AssociatePublicIpAddress": true,
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1\n\necho BEGIN\n",
+                                "\n",
+                                "REGION=\"", { "Ref": "AWS::Region" }, "\"\n",
+                                "DEPLOYMENT=\"", { "Ref": "Deployment" }, "\"\n",
+                                "ENVIRONMENT=\"", { "Ref": "Environment" }, "\"\n",
+                                "PRODUCER_URL=\"", { "Ref": "ProducerUrl" }, "\"\n",
+                                "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "\n",
+                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nLAB_PATH=\"labs/gokafkaproducer\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Update repos and install dependencies\napt-get update\napt-get -y install git-core build-essential awscli\n\n# Install rvm for the latest ruby version\ncommand curl -sSL https://rvm.io/mpapis.asc | gpg --import -\ncurl -sSL https://get.rvm.io | bash -s stable --ruby\nsource /usr/local/rvm/scripts/rvm\nrvm use 2.1 --default\nrvm rubygems current\n\n# Get latest version of jq\nwget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq\nchmod +x /usr/local/bin/jq\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone git@github.com:stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Install Bundler and community cookbooks with librarian\naws s3 cp --region $REGION s3://bdoss-deploy/gems/librarian-0.1.2.gem /tmp/librarian-0.1.2.gem\ngem install /tmp/librarian-0.1.2.gem --no-ri --no-rdoc\ngem install bundler --no-ri --no-rdoc\ncd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install\n\n# Find zookeeper nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nZK_SERVERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Find kafka brokers\nNODES_FILTER=\"Name=tag:Name,Values=kafka.$DEPLOYMENT.$ENVIRONMENT\"\nKAFKA_BROKERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Run Chef\nproducer_url=\"$PRODUCER_URL\" \\\nzk_servers=\"$ZK_SERVERS\" \\\nkafka_brokers=$\"$KAFKA_BROKERS\" \\\nchef-solo -c \"$REPO_DIR/$LAB_PATH/chef/solo.rb\" -j \"$REPO_DIR/$LAB_PATH/chef/solo.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "InstanceGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "PublicSubnetId"
+                    }
+                ],
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "DesiredCapacity": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MinSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MaxSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "AsgTopicArn"
+                    },
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "gokafkaproducer",
+                                    {
+                                        "Ref": "Deployment"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+        "PublicSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable public access to the kafka producer node, allow traffic to/from ephemeral ports and http(s) traffic",
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },                   
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WaitForInstanceWaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle",
+            "Properties": {
+            }
+        },
+        "WaitForInstance": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "InstanceGroup",
+            "Properties": {
+                "Handle": {
+                    "Ref": "WaitForInstanceWaitHandle"
+                },
+                "Timeout": "900"
+            }
+        }
+    }
+}
