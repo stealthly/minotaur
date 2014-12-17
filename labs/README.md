@@ -9,4 +9,4 @@ The following labs are currently supported:
 - [Apache Zookeeper](zookeeper/README.md)
 - [Cloudera Hadoop](clouderahadoop)
 - [Golang Kafka Consumer](gokafkaconsumer)
-- [GOlang Kafka Producer](gokafkaproducer)
+- [Golang Kafka Producer](gokafkaproducer)
