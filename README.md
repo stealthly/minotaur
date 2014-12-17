@@ -1,5 +1,5 @@
-dexter
-======
+Minotaur
+========
 
 This repo constains scripts/recipes/configs to spin up VPC-based infrastructure in AWS from scratch and deploy labs to it.
 
