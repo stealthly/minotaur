@@ -42,7 +42,7 @@ Once you are inside of the supervisor image, the `minotaur.py` script may be use
 root@supervisor:/deploy# ./minotaur.py infrastructure list
 Available deployments are: ['bastion', 'iampolicies', 'iamusertogroupadditions', 'nat', 'sns', 'subnet', 'vpc']
 ```
-### Print Infrastructure Component Usage
+#### Print Infrastructure Component Usage
 ```
 root@supervisor:/deploy# ./minotaur.py infrastructure deploy bastion -h
 usage: minotaur.py infrastructure deploy bastion [-h] -e ENVIRONMENT -r REGION

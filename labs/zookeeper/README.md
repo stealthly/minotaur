@@ -1,11 +1,31 @@
-##Zookeeper nodes
+zookeeper-lab
+=========
+This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin up a Zookeeper ensemble.
 
-- clone this repo to **repo_dir**
-- cd to **repo_dir/zookeeper/aws folder**
-- exec **apply-zookeeper.sh**:
+## Usage
 
 ```
-./apply-zookeeper.sh <environment> <deployment> <region> <availability zone> [number of nodes] [instances flavor] [zookeeper version]
+usage: minotaur.py lab deploy zookeeper [-h] -e ENVIRONMENT -d DEPLOYMENT -r
+                                        REGION -z AVAILABILITY_ZONE
+                                        [-n NUM_NODES] [-i INSTANCE_TYPE]
+                                        [-v ZK_VERSION]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e ENVIRONMENT, --environment ENVIRONMENT
+                        CloudFormation environment to deploy to
+  -d DEPLOYMENT, --deployment DEPLOYMENT
+                        Unique name for the deployment
+  -r REGION, --region REGION
+                        Geographic area to deploy to
+  -z AVAILABILITY_ZONE, --availability-zone AVAILABILITY_ZONE
+                        Isolated location to deploy to
+  -n NUM_NODES, --num-nodes NUM_NODES
+                        Number of instances to deploy
+  -i INSTANCE_TYPE, --instance-type INSTANCE_TYPE
+                        AWS EC2 instance type to deploy
+  -v ZK_VERSION, --zk-version ZK_VERSION
+                        The Zookeeper version to deploy
 ```
 
 **Mandatory arguments:**
@@ -28,8 +48,8 @@
 
 **Example:**
 
-`./apply-zookeeper.sh bdoss-dev testing us-east-1 us-east-1a 3` - this will spin up 3 zookeeper nodes in "testing" deployment.
+`./minotaur.py lab deploy zookeeper -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -n 3` - this will spin up 3 zookeeper nodes in "testing" deployment.
 
-NOTICE: All Zookeeper nodes that belong to the same deployment will form a cluster.
+*NOTICE:* All Zookeeper nodes that belong to the same deployment will form a cluster.
 
 If you want to remove your deployment - just delete a corresponding CloudFormation stack in AWS Web Console.

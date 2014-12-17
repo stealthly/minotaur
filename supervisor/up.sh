@@ -17,8 +17,6 @@
 
 CONTAINER_NAME="supervisor"
 
-[ "$UID" -eq 0 ] || exec sudo bash "$0" "$@"
-
 echo "Building ..."
 docker build -t $CONTAINER_NAME .
 

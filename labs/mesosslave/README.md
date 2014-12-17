@@ -1,1 +1,1 @@
-You should go read labs/mesos-master/README.md!
+See [this readme](../mesosmaster/README.md)!

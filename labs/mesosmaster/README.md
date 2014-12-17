@@ -2,22 +2,35 @@ mesos-lab
 =========
 This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin up Mesos master and slave nodes.
 
-##Mesos nodes
-
-- clone this repo to **repo_dir**
-- cd to **repo_dir/mesos-lab/aws folder**
-- exec **apply-mesos-master.sh**:
-
+## Usage
 ```
-./apply-mesos-master.sh <environment> <deployment> <region> <availability zone> [number of nodes] [instances flavor] [aurora url] [mesos version] [zookeeper version]
-```
+usage: minotaur.py lab deploy mesosmaster [-h] -e ENVIRONMENT -d DEPLOYMENT -r
+                                          REGION -z AVAILABILITY_ZONE
+                                          [-n NUM_NODES] [-i INSTANCE_TYPE]
+                                          [-m MESOS_VERSION] [-v ZK_VERSION]
+                                          [-a AURORA_URL]
 
-- exec **apply-mesos-slave.sh**:
-
+optional arguments:
+  -h, --help            show this help message and exit
+  -e ENVIRONMENT, --environment ENVIRONMENT
+                        CloudFormation environment to deploy to
+  -d DEPLOYMENT, --deployment DEPLOYMENT
+                        Unique name for the deployment
+  -r REGION, --region REGION
+                        Geographic area to deploy to
+  -z AVAILABILITY_ZONE, --availability-zone AVAILABILITY_ZONE
+                        Isolated location to deploy to
+  -n NUM_NODES, --num-nodes NUM_NODES
+                        Number of instances to deploy
+  -i INSTANCE_TYPE, --instance-type INSTANCE_TYPE
+                        AWS EC2 instance type to deploy
+  -m MESOS_VERSION, --mesos-version MESOS_VERSION
+                        The Mesos version to deploy
+  -v ZK_VERSION, --zk-version ZK_VERSION
+                        The Zookeeper version to deploy
+  -a AURORA_URL, --aurora-url AURORA_URL
+                        The Aurora scheduler URL
 ```
-./apply-mesos-slave.sh <environment> <deployment> <region> <availability zone> [number of nodes] [instances flavor] [mesos version] [zookeeper version]
-```
-
 **Mandatory arguments:**
 
 `<environment>` - currently we have only **bdoss-dev** environment in VPC, use it
@@ -34,19 +47,19 @@ This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin 
 
 `[instances flavor]` defaults to m1.small
 
-`[aurora url]` defaults to https://s3.amazonaws.com/bdoss-deploy/mesos/aurora/aurora-scheduler-0.6.1.tar
-
 `[mesos version]` defaults to 0.20.1
 
 `[zookeeper version]` defaults to 3.4.6
 
+`[aurora url]` defaults to https://s3.amazonaws.com/bdoss-deploy/mesos/aurora/aurora-scheduler-0.6.1.tar
+
 **Example:**
 
-`./apply-mesos-master.sh bdoss-dev testing us-east-1 us-east-1a 0.20.0 m1.small` - this will spin up mesos master (v. 0.20.0) node in "testing" deployment.
+`./minotaur.py lab deploy mesosmaster -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -m 0.20.0 -i m1.small` - this will spin up mesos master (v. 0.20.0) node in "testing" deployment.
 
-`./apply-mesos-master.sh bdoss-dev testing us-east-1 us-east-1a 3 m1.medium` - this will spin up 3 m1.medium mesos slave nodes in "testing" deployment.
+`./minotaur.py lab deploy mesosmaster -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -n 3 -i m1.medium` - this will spin up 3 m1.medium mesos slave nodes in "testing" deployment.
 
-NOTICE: If you're deploying a cluster - make sure that a separate Zookeeper node is running in the same environment and deployment.
+*NOTICE:* If you're deploying a cluster - make sure that a separate Zookeeper node is running in the same environment and deployment.
 
 During spin-up procedure, each Mesos node (this also applies to master) will try to reveal all Zookeeper nodes running in the same environment+deployment and will configure itself against them.
 
