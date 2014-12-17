@@ -63,8 +63,7 @@ Now you can cd to /deploy/labs/ and deploy whatever you want
 **Example:**
 
 ```
-root@supervisor:/deploy# cd labs/
-root@supervisor:/deploy/labs# ./apply-mesos-master.py -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+minotaur lab deploy mesosmaster -e bdoss-dev -d test -r us-east-1 -z us-east-1a
 Creating new stack 'mesos-master-test-bdoss-dev-us-east-1-us-east-1a'...
 Stack deployed.
 ```
