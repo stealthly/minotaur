@@ -31,10 +31,10 @@ for module in lab_list:
 	exec("from labs.{0} import {0}".format(module))
 
 commands = ["list", "deploy"]
-deploy_usage = """usage: dexter deploy <deployment> [flags...]
+deploy_usage = """usage: minotaur deploy <deployment> [flags...]
 """
 
-class Dexter:
+class Minotaur:
 	def __init__(self):
 		parser = ArgumentParser(description="Deploy VPC-based infrastructure and labs based on this infrastructure in AWS")
 		subparsers = parser.add_subparsers()
@@ -91,4 +91,4 @@ class Dexter:
 			print "Available deployments are: {0}".format(inf)
 
 if __name__ == "__main__":
-	Dexter().deploy()
+	Minotaur().deploy()

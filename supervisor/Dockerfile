@@ -53,8 +53,8 @@ RUN ln -s /root/scripts/cgnaws/awsinfo.py /usr/local/bin/awsinfo
 RUN ln -s /root/scripts/cgnaws/template_ssh.py /usr/local/bin/templatessh
 # RUN chmod +x /usr/local/bin/awsinfo
 
-# Link dexter script to bin directory
-RUN ln -s /deploy/dexter.py /usr/local/bin/dexter
+# Link master script to bin directory
+RUN ln -s /deploy/minotaur.py /usr/local/bin/minotaur
 
 # Creating ssh config
 COPY config/ssh_config /root/.ssh/config

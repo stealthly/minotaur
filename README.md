@@ -39,15 +39,15 @@ Once you are inside of the supervisor image, the `minotaur.py` script may be use
 
 #### List Infrastructure Components
 ```
-root@supervisor:/deploy# ./minotaur.py infrastructure list
+root@supervisor:~# minotaur infrastructure list
 Available deployments are: ['bastion', 'iampolicies', 'iamusertogroupadditions', 'nat', 'sns', 'subnet', 'vpc']
 ```
 #### Print Infrastructure Component Usage
 ```
-root@supervisor:/deploy# ./minotaur.py infrastructure deploy bastion -h
-usage: minotaur.py infrastructure deploy bastion [-h] -e ENVIRONMENT -r REGION
-                                                 -z AVAILABILITY_ZONE
-                                                 [-i INSTANCE_TYPE]
+root@supervisor:~# minotaur infrastructure deploy bastion -h
+usage: minotaur infrastructure deploy bastion [-h] -e ENVIRONMENT -r REGION -z
+                                              AVAILABILITY_ZONE
+                                              [-i INSTANCE_TYPE]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -65,7 +65,7 @@ optional arguments:
 
 In this example, the `bdoss-dev` bastion already existed, so the CloudFormation stack was updated with the current template.
 ```
-root@supervisor:/deploy# ./minotaur.py infrastructure deploy bastion -e bdoss-dev -r us-east-1 -z -us-east-1a
+root@supervisor:~# minotaur infrastructure deploy bastion -e bdoss-dev -r us-east-1 -z -us-east-1a
 Template successfully validated.
 Updating existing 'bastion-bdoss-dev-us-east-1-us-east-1a' stack...
 Stack updated.
@@ -74,18 +74,18 @@ Stack updated.
 #### List Labs
 List all supported labs.
 ```
-root@supervisor:/deploy# ./minotaur.py lab list
+root@supervisor:~# minotaur lab list
 Available deployments are: ['clouderahadoop', 'gokafkaconsumer', 'gokafkaproducer', 'kafka', 'mesosmaster', 'mesosslave', 'zookeeper']
 ```
 
 #### Print Lab Usage
 Print the kafka lab usage.
 ```
-root@supervisor:/deploy# ./minotaur.py lab deploy kafka -h
-usage: minotaur.py lab deploy kafka [-h] -e ENVIRONMENT -d DEPLOYMENT -r
-                                    REGION -z AVAILABILITY_ZONE [-n NUM_NODES]
-                                    [-i INSTANCE_TYPE] [-v ZK_VERSION]
-                                    [-k KAFKA_URL]
+root@supervisor:~# minotaur lab deploy kafka -h
+usage: minotaur lab deploy kafka [-h] -e ENVIRONMENT -d DEPLOYMENT -r REGION
+                                 -z AVAILABILITY_ZONE [-n NUM_NODES]
+                                 [-i INSTANCE_TYPE] [-v ZK_VERSION]
+                                 [-k KAFKA_URL]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -110,8 +110,8 @@ optional arguments:
 #### Deploy Lab
 Deploy a 3-broker Kafka cluster.
 ```
-root@supervisor:/deploy# ./minotaur.py lab deploy kafka -e bdoss-dev -d kafka-example -r us-east-1 -z us-east-1a -n 3 -i m1.small    
+root@supervisor:~# minotaur lab deploy kafka -e bdoss-dev -d example -r us-east-1 -z us-east-1a -n 3 -i m1.small
 Template successfully validated.
-Creating new 'kafka-bdoss-dev-kafka-example-us-east-1-us-east-1a' stack...
+Creating new 'kafka-bdoss-dev-example-us-east-1-us-east-1a' stack...
 Stack deployed.
 ```
