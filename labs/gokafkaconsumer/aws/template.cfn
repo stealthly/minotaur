@@ -262,7 +262,7 @@
                 "Handle": {
                     "Ref": "WaitForInstanceWaitHandle"
                 },
-                "Timeout": "900"
+                "Timeout": "1200"
             }
         }
     }
