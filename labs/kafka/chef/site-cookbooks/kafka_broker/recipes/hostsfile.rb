@@ -1,6 +1,6 @@
 # IPFinder depends on this gem
 chef_gem "ipaddr_extensions" do
-  version '1.0.1'
+  version '1.0.0'
 end
 
 # Override network interface if in vagrant env
