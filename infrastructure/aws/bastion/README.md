@@ -46,6 +46,13 @@ Host 10.0.*.*
     ProxyCommand  ssh -i ~/.ssh/personal_ssh_key <personal_id>@<bastion_public_ip> nc %h %p
 ```
 
-Now you can log in to the instances simply by typing:
+Or you can use template_ssh script to template your ssh config file(only bastion public ip will be templated).
 
+```
+templatessh -e <environment>
+```
+
+Now you can log in to the instances simply by typing:
+```
 ssh 10.0.X.X
+```

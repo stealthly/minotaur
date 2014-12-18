@@ -1,6 +1,6 @@
+include_recipe 'kafka_broker::hostsfile'
 include_recipe 'java::default'
 include_recipe 'runit'
-include_recipe 'kafka_broker::hostsfile'
 
 # Get zk_servers and kafka brokers either from ENV or from chef environment provided by knife
 # Must be in a form of comma-separated list

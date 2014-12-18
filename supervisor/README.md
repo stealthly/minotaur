@@ -35,7 +35,7 @@ d) **ssh_config**
 
 This is a regular SSH config file, you have to change your_username only (this is the one registered on Bastion).
 
-BASTION_IP is handled dynamically when container is built.
+Run `templatessh -e <environment>` - to dynamically template BASTION_IP.
 
 ```
 # BDOSS environment

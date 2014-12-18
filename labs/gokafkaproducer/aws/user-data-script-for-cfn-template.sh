@@ -53,7 +53,7 @@ chmod +x /usr/local/bin/jq
 mkdir -p "$WORKING_DIR"
 chmod 0755 "$WORKING_DIR"
 
-git clone git@github.com:stealthly/minotaur.git "$REPO_DIR"
+git clone https://git@github.com/stealthly/minotaur.git "$REPO_DIR"
 
 # Install Chef
 curl -L https://www.opscode.com/chef/install.sh | bash

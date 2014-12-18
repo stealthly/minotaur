@@ -71,6 +71,21 @@ Updating existing 'bastion-bdoss-dev-us-east-1-us-east-1a' stack...
 Stack updated.
 ```
 
+#### Deploy All Infrastructure Components
+Deploy all infrastructure components one after another. In approximately 12 minutes infrastructure will be up and running.
+```
+root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small
+Template successfully validated.
+Creating new 'sns-cloudformation-notifications-bdoss-dev-us-east-1' stack...
+Stack created.
+Template successfully validated.
+Creating new 'sns-autoscaling-notifications-bdoss-dev-us-east-1' stack...
+........................................................................
+Template successfully validated.
+Creating new  'bastion-bdoss-dev-us-east-1-us-east-1a' stack...
+Stack created.
+```
+
 #### List Labs
 List all supported labs.
 ```
@@ -114,4 +129,12 @@ root@supervisor:~# minotaur lab deploy kafka -e bdoss-dev -d example -r us-east-
 Template successfully validated.
 Creating new 'kafka-bdoss-dev-example-us-east-1-us-east-1a' stack...
 Stack deployed.
+```
+
+#### SSH In To The Instance
+Before you will actually ssh you must run `templatessh -e <environment>` to change current bastion public IP in ssh config.
+
+Now you can log in to the instances simply by typing:
+```
+ssh 10.0.X.X
 ```
