@@ -18,12 +18,12 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "bootstrapDocker.box"
+  config.vm.box = "precise64"
 
-  config.vm.box_url = "./bootstrapDocker.box"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
   config.vm.define "precise64" do |precise64|
-    precise64.vm.network :private_network, ip: "192.168.95.75"
+    precise64.vm.network :private_network, ip: "172.16.66.77"
     precise64.vm.provider :virtualbox do |vb|
       vb.customize ["modifyvm", :id, "--memory", "1024"]
     end
@@ -32,3 +32,5 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     images: ["ubuntu"]
   end
 end
+
+
