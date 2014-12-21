@@ -4,12 +4,7 @@
     "Parameters": {
         "Environment": {
             "Description": "Environment in which the instances belong",
-            "Type": "String",
-            "AllowedValues": [
-                "bdoss-dev",
-                "dummy"
-            ],
-            "ConstraintDescription": "must be one of bdoss-dev, dummy"
+            "Type": "String"
         },
         "VpcId": {
             "Description": "ID of the VPC",

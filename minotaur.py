@@ -57,6 +57,7 @@ class Minotaur:
 		parser_all.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 		parser_all.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 		parser_all.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type of nat and bastion instances to deploy')
+		parser_all.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
 		self.args, self.unknown = parser.parse_known_args()
 		if sys.argv[2] is None:
 			print "Available commands are {0}".format(commands)
@@ -75,7 +76,7 @@ class Minotaur:
 				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "private", "10.0.0.0/23").deploy()
 				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "public", "10.0.2.0/24").deploy()
 				nat.Nat(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type).deploy()
-				bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type).deploy()
+				bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type, self.args.repo_url).deploy()
 			elif sys.argv[3] in infrastructure_list:
 				exec("{0}.main()".format(sys.argv[3]))
 		elif sys.argv[2] == commands[1] and sys.argv[1] == "lab":

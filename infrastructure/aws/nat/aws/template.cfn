@@ -13,12 +13,7 @@
         },
         "Environment": {
             "Description": "Environment in which the instances belong",
-            "Type": "String",
-            "AllowedValues": [
-                "bdoss-dev",
-                "dummy"
-            ],
-            "ConstraintDescription": "must be one of prod, test, or dev"
+            "Type": "String"
         },
         "VpcId": {
             "Description": "ID of the VPC",

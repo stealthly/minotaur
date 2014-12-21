@@ -26,6 +26,7 @@ echo BEGIN
 #ENVIRONMENT="{ "Ref": "Environment" }"
 #PUBLIC_NETWORK_INTERFACE_ID="{ "Ref": "PublicNetworkInterface" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
+#REPO_URL="{ "Ref": "RepoUrl" }"
 
 WORKING_DIR="/deploy"
 REPO_DIR="$WORKING_DIR/repo"
@@ -37,7 +38,7 @@ yum -y install git-core
 mkdir -p "$WORKING_DIR"
 chmod 0755 "$WORKING_DIR"
 
-git clone https://git@github.com/stealthly/minotaur.git "$REPO_DIR"
+git clone "$REPO_URL" "$REPO_DIR"
 
 # Install Chef
 curl -L https://www.opscode.com/chef/install.sh | bash

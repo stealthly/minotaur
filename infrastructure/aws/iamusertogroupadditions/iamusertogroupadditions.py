@@ -18,17 +18,15 @@ from argparse import ArgumentParser
 from ..infrastructure import Infrastructure
 
 class Iamusertogroupadditions(Infrastructure):
-	def __init__(self, environment, region):
-		super(Iamusertogroupadditions, self).__init__(environment, deployment='', region=region, zone='')
+	def __init__(self):
+		super(Iamusertogroupadditions, self).__init__(environment='', deployment='', region='', zone='')
 		self.stack_name = "iam-user-to-group-additions"
 
 parser = ArgumentParser(description='Deploy iam user to group additions to an AWS CloudFormation environment.')
-parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
-parser.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 
 def main():
 	args, unknown = parser.parse_known_args()
-	infrastructure = Iamusertogroupadditions(args.environment, args.region)
+	infrastructure = Iamusertogroupadditions()
 	infrastructure.deploy()
 
 if __name__ == '__main__':

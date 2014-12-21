@@ -13,12 +13,7 @@
         },
         "Environment": {
             "Description": "Environment in which the instances belong",
-            "Type": "String",
-            "AllowedValues": [
-                "bdoss-dev",
-                "dummy"
-            ],
-            "ConstraintDescription": "must be one of prod, test, or dev"
+            "Type": "String"
         },
         "VpcId": {
             "Description": "ID of the VPC",
@@ -61,6 +56,10 @@
         },
         "AsgTopicArn": {
             "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        },
+        "RepoUrl": {
+            "Description": "Public repository url where user info is stored",
             "Type": "String"
         }
     },
@@ -167,8 +166,9 @@
                                 "ENVIRONMENT=\"", { "Ref": "Environment" }, "\"\n",
                                 "PUBLIC_NETWORK_INTERFACE_ID=\"", { "Ref": "PublicNetworkInterface" }, "\"\n",
                                 "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "REPO_URL=\"", { "Ref": "RepoUrl" }, "\"\n",
                                 "\n",
-                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nBASTION_PATH=\"infrastructure/aws/bastion\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Attach public network interface\naws ec2 attach-network-interface --region \"$REGION_ID\" --instance-id \"$INSTANCE_ID\" --network-interface-id \"$PUBLIC_NETWORK_INTERFACE_ID\" --device-index=1\n\nyum -y install git-core\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone https://git@github.com/stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Run Chef\nenvironment=$ENVIRONMENT chef-solo -c \"$REPO_DIR/$BASTION_PATH/chef/solo.rb\" -j \"$REPO_DIR/$BASTION_PATH/chef/solo.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END"
+                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nBASTION_PATH=\"infrastructure/aws/bastion\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Attach public network interface\naws ec2 attach-network-interface --region \"$REGION_ID\" --instance-id \"$INSTANCE_ID\" --network-interface-id \"$PUBLIC_NETWORK_INTERFACE_ID\" --device-index=1\n\nyum -y install git-core\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone \"$REPO_URL\" \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Run Chef\nenvironment=$ENVIRONMENT chef-solo -c \"$REPO_DIR/$BASTION_PATH/chef/solo.rb\" -j \"$REPO_DIR/$BASTION_PATH/chef/solo.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END"
                             ]
                         ]
                     }

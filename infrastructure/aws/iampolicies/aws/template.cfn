@@ -311,26 +311,6 @@
                 }
             }
         },
-        "FullS3DeployBucketAccess": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
-                "PolicyName": "full-s3-deploy-bucket-access",
-                "Groups": [
-                    "jenkins"
-                ],
-                "PolicyDocument": {
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "s3:*"
-                            ],
-                            "Resource": [ "arn:aws:s3:::bdoss-deploy", "arn:aws:s3:::bdoss-deploy/*" ]
-                        }
-                    ]
-                }
-            }
-        },
         "AttachNetworkInterfaceAccess": {
             "Type": "AWS::IAM::Policy",
             "Properties": {

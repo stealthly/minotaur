@@ -13,7 +13,9 @@ Before actually spinning instances up or managing infrastructure, you'll need:
 Alternatively, you can use Supervisor image to manage AWS-related stuff.
 
 Optionally you might also want to register your account on Bastion, to have SSH access to instances. 
-Info about how to do it can be found in README in infrastructure/aws/bastion folder.
+Info about how to do it can be found in [README](infrastructure/aws/bastion).
+
+First of all, fork this repo and populate your users folder like it is told in Bastion readme. Don't forget to specify your repository url while deploying bastion.
 
 ###CloudFormation basics
 CFN template is a JSON file that describes all the resources/relations/variables/etc for particular logical entity.
@@ -35,6 +37,8 @@ Supervisor is a Docker-based image that contains all the necessary software to m
 
 Once you are inside of the supervisor image, the `minotaur.py` script may be used to provision an environment and labs. The rest of this readme assumes that the script is executed from within the supervisor container.
 
+Before using minotaur script you must explicitly create or upload precreated key pair to aws ec2. A name of this key pair must be equal to the name of environment you want to create. Lately you will use this key with a key you specified in bastion [users folder](infrastructure/aws/bastion/chef/data_bags/users) to ssh into your instances.
+
 ### Minotaur Commands
 
 #### List Infrastructure Components
@@ -47,7 +51,7 @@ Available deployments are: ['bastion', 'iampolicies', 'iamusertogroupadditions',
 root@supervisor:~# minotaur infrastructure deploy bastion -h
 usage: minotaur infrastructure deploy bastion [-h] -e ENVIRONMENT -r REGION -z
                                               AVAILABILITY_ZONE
-                                              [-i INSTANCE_TYPE]
+                                              [-i INSTANCE_TYPE] [-u REPO_URL]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -59,6 +63,8 @@ optional arguments:
                         Isolated location to deploy to
   -i INSTANCE_TYPE, --instance-type INSTANCE_TYPE
                         AWS EC2 instance type to deploy
+  -u REPO_URL, --repo-url REPO_URL
+                        Public repository url where user info is stored
 ```
 
 #### Deploy Infrastructure Component
@@ -83,6 +89,18 @@ Creating new 'sns-autoscaling-notifications-bdoss-dev-us-east-1' stack...
 ........................................................................
 Template successfully validated.
 Creating new  'bastion-bdoss-dev-us-east-1-us-east-1a' stack...
+Stack created.
+```
+Notice that this will not deploy iam policies and iam user to group additions, so you must do it explicitly.
+You can easily add users to specific security group in [iam user to group additions](infrastructure/aws/iamusertogroupadditions/aws/template.cfn) cloudformation template(default user there is admin)
+```
+root@supervisor:/deploy# minotaur infrastructure deploy iampolicies
+Template successfully validated.
+Creating new 'iam-policies' stack...
+Stack created.
+root@supervisor:/deploy# minotaur infrastructure deploy iamusertogroupadditions
+Template successfully validated.
+Creating new  'iam-user-to-group-additions' stack...
 Stack created.
 ```
 

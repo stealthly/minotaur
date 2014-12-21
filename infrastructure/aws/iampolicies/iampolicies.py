@@ -18,17 +18,15 @@ from argparse import ArgumentParser
 from ..infrastructure import Infrastructure
 
 class Iampolicies(Infrastructure):
-	def __init__(self, environment, region):
-		super(Iampolicies, self).__init__(environment, deployment='', region=region, zone='')
+	def __init__(self):
+		super(Iampolicies, self).__init__(environment='', deployment='', region='', zone='')
 		self.stack_name = "iam-policies"
 
 parser = ArgumentParser(description='Deploy iam policies to an AWS CloudFormation environment.')
-parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
-parser.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 
 def main():
 	args, unknown = parser.parse_known_args()
-	infrastructure = Iampolicies(args.environment, args.region)
+	infrastructure = Iampolicies()
 	infrastructure.deploy()
 
 if __name__ == '__main__':

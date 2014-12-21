@@ -4,12 +4,7 @@
     "Parameters": {
         "Environment": {
             "Description": "The environment in which the VPC belongs",
-            "Type": "String",
-            "AllowedValues": [
-                "bdoss-dev",
-                "dummy"
-            ],
-            "ConstraintDescription": "must be one of bdoss-dev, dummy"
+            "Type": "String"
         },
         "CidrBlock": {
             "Description": "Address block allocated to the VPC",
