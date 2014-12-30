@@ -27,29 +27,13 @@ b) **private.key**
 
 This is your private SSH key, public part of which is registered on Bastion host
 
-c) **environment.key**
+c) **ENVIRONMENT.key**
 
-This is a shared key for all nodes in environment Supervisor is supposed to manage. 
-
-d) **ssh_config**
-
-This is a regular SSH config file, you have to change your_username only (this is the one registered on Bastion).
-
-Run `templatessh -e <environment>` - to dynamically template BASTION_IP.
-
-```
-# BDOSS environment
-Host 10.0.2.*
-    IdentityFile ~/.ssh/environment.key 
-    User ubuntu
-    ProxyCommand  ssh -i ~/.ssh/private.key your_username@BASTION_IP nc %h %p
-Host 10.0.*.*
-    IdentityFile ~/.ssh/environment.key 
-    User ubuntu
-    ProxyCommand  ssh -i ~/.ssh/private.key your_username@BASTION_IP nc %h %p
-```
+This is a shared key for all nodes in environment ENVIRONMENT Supervisor is supposed to manage (e.g bdoss-dev.key for bdoss-dev environment, etc.).
 
 - exec **up.sh**:
+
+Supervisor depends on docker version >= 1.3.0.
 
 If this is the first time you're launching supervisor - it will take some time to build.
 
@@ -63,13 +47,16 @@ Now you can cd to /deploy/labs/ and deploy whatever you want
 **Example:**
 
 ```
-minotaur lab deploy mesosmaster -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+root@supervisor:/deploy# minotaur lab deploy mesosmaster -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+Template successfully validated.
 Creating new stack 'mesos-master-test-bdoss-dev-us-east-1-us-east-1a'...
 Stack deployed.
 ```
 
-this will spin up a mesos master node in "testing" deployment.
+this will spin up a mesos master node in "test" deployment.
 
+** Local DNS Names **
+Supervisor has internal local dns system. It uses SkyDNS with etcd backend. DNS records are populated every minute using cron job, so be patient and give it a little time(up to a minute) right after container run to populate everything properly. Right after that you can get instances local DNS names using `awsinfo` command.
 
 **awsinfo**
 
@@ -83,12 +70,12 @@ It is also capable of searching through that info.
 ```
 root@supervisor:/deploy# awsinfo
 Cloud:  bdoss/us-east-1
-Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      
-----                                -----------  -------------  --------------  ----------      ---------      
-nat.bdoss-dev                       i-c46a0b2a   m1.small       running         10.0.2.94       54.86.153.142  
-bastion.bdoss-dev                   i-3faa69de   m1.small       running         10.0.0.207      None           
-mesos-master.test.bdoss-dev         i-e80ddc09   m1.small       terminated      None            None           
-mesos-slave.test.bdoss-dev          i-e00ddc01   m1.small       terminated      None            None           
+Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      Local DNS Name
+----                                -----------  -------------  --------------  ----------      ---------      --------------
+nat.bdoss-dev                       i-c46a0b2a   m1.small       running         10.0.2.94       54.86.153.142  ip-10-0-2-94.bdoss-dev.aws
+bastion.bdoss-dev                   i-3faa69de   m1.small       running         10.0.0.207      None           ip-10-0-0-270.bdoss-dev.aws
+mesos-master.test.bdoss-dev         i-e80ddc09   m1.small       terminated      None            None           unknown
+mesos-slave.test.bdoss-dev          i-e00ddc01   m1.small       terminated      None            None           unknown
 ```
 
 `awsinfo mesos-master` - will display info about all mesos-master nodes running in AWS.
@@ -96,9 +83,9 @@ mesos-slave.test.bdoss-dev          i-e00ddc01   m1.small       terminated      
 ```
 root@supervisor:/deploy/labs# awsinfo mesos-master
 Cloud:  bdoss/us-east-1
-Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      
-----                                -----------  -------------  --------------  ----------      ---------      
-mesos-master.test.bdoss-dev         i-e80ddc09   m1.small       terminated      None            None           
+Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      Local DNS Name
+----                                -----------  -------------  --------------  ----------      ---------      --------------
+mesos-master.test.bdoss-dev         i-e80ddc09   m1.small       terminated      None            None           unknown
 ```
 
 `awsinfo 10.0.2` - match a private/public subnet
@@ -106,12 +93,11 @@ mesos-master.test.bdoss-dev         i-e80ddc09   m1.small       terminated      
 ```
 root@supervisor:/deploy/labs# awsinfo 10.0.2
 Cloud:  bdoss/us-east-1
-Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      
-----                                -----------  -------------  --------------  ----------      ---------      
-nat.bdoss-dev                       i-c46a0b2a   m1.small       running         10.0.2.94       54.86.153.142  
-mesos-master.test.bdoss-dev         i-e96ebd08   m1.small       running         10.0.2.170      54.172.160.254 
+Name                                Instance ID  Instance Type  Instance State  Private IP      Public IP      Local DNS Name
+----                                -----------  -------------  --------------  ----------      ---------      --------------
+nat.bdoss-dev                       i-c46a0b2a   m1.small       running         10.0.2.94       54.86.153.142  ip-10-0-2-94.bdoss-dev.aws
+mesos-master.test.bdoss-dev         i-e96ebd08   m1.small       running         10.0.2.170      54.172.160.254 ip-10-0-2-170.bdoss-dev.aws
 ```
-
 
 ## Vagrant
 

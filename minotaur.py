@@ -58,6 +58,7 @@ class Minotaur:
 		parser_all.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 		parser_all.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type of nat and bastion instances to deploy')
 		parser_all.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
+		parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', help='Subnet mask of VPC network to create')
 		self.args, self.unknown = parser.parse_known_args()
 		if sys.argv[2] is None:
 			print "Available commands are {0}".format(commands)
@@ -70,11 +71,13 @@ class Minotaur:
 		# DEPLOY
 		elif sys.argv[2] == commands[1] and sys.argv[1] == "infrastructure":
 			if sys.argv[3] == "all":
+				ip, mask = self.args.cidr_block.split('/')
+				public_ip = '.'.join([ip.split('.')[0], ip.split('.')[1], str(int(ip.split('.')[2])+2), ip.split('.')[3]])
 				sns.Sns(self.args.environment, self.args.region, "cloudformation-notifications").deploy()
 				sns.Sns(self.args.environment, self.args.region, "autoscaling-notifications").deploy()
-				vpc.Vpc(self.args.environment, self.args.region, "10.0.0.0/21").deploy()
-				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "private", "10.0.0.0/23").deploy()
-				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "public", "10.0.2.0/24").deploy()
+				vpc.Vpc(self.args.environment, self.args.region, self.args.cidr_block).deploy()
+				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "private", '/'.join([ip, str(int(mask)+2)])).deploy()
+				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "public", '/'.join([public_ip, str(int(mask)+3)])).deploy()
 				nat.Nat(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type).deploy()
 				bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type, self.args.repo_url).deploy()
 			elif sys.argv[3] in infrastructure_list:

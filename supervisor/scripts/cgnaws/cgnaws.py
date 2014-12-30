@@ -17,6 +17,7 @@
 
 import boto.ec2 as ec2
 import time, threading
+import socket
 
 def establish_connections(accounts):
 	connections = {}
@@ -60,30 +61,35 @@ def get_instances_info(instances):
 	for name in instances:
 		info[name] = []
 		for instance in instances[name]:
+			try:
+				local_dns_name = socket.gethostbyaddr(instance.private_ip_address)[0]
+			except:
+				local_dns_name = "unknown"
 			info[name].append({ 'id' : instance.id, 'type': instance.instance_type, 'state': instance.state, \
 					'private-ip': instance.private_ip_address, 'public-ip': instance.ip_address, \
-					'public-dns': instance.public_dns_name, 'tags' : instance.tags })
+					'public-dns': instance.public_dns_name, 'tags' : instance.tags, 'local-dns': local_dns_name})
 	return info
 
 def print_instances_info(instances_info,search_string=None):
 	for cloud_name in instances_info:
 		print 'Cloud: ', cloud_name
-		table = '{0:35s} {1:12s} {2:14s} {3:15s} {4:15s} {5:15s}'
-		print table.format("Name", "Instance ID", "Instance Type", "Instance State", "Private IP", "Public IP")
-		print table.format("----", "-----------", "-------------", "--------------", "----------", "---------")
+		table = '{0:30s} {1:12s} {2:14s} {3:15s} {4:15s} {5:15s} {6:15s}'
+		print table.format("Name", "Instance ID", "Instance Type", "Instance State", "Private IP", "Public IP", "Local DNS Name")
+		print table.format("----", "-----------", "-------------", "--------------", "----------", "---------", "--------------")
 		for instance in instances_info[cloud_name]:
 			if search_string != None and \
 				search_string not in str(instance['tags']) and \
 				search_string not in str(instance['id']) and \
 				search_string not in str(instance['private-ip']) and \
 				search_string not in str(instance['public-ip']) and \
-				search_string not in str(instance['type']):
+				search_string not in str(instance['type']) and \
+				search_string not in str(instance['local-dns']):
 				continue
 			if "Name" in instance["tags"]:
 				name = instance["tags"]["Name"]
 			else:
 				name = "unknown"
-			print table.format(name, instance["id"], instance["type"], instance["state"], instance["private-ip"], instance["public-ip"])
+			print table.format(name, instance["id"], instance["type"], instance["state"], instance["private-ip"], instance["public-ip"], instance["local-dns"])
 
 def main():
 	print '''

@@ -58,16 +58,16 @@ class Infrastructure(object):
 			if self.stack_exists():
 				print "Updating existing '{0}' stack...".format(self.stack_name)
 				stack = self.cfn_connection.update_stack(self.stack_name,
-					template_body=self.template_body, parameters=self.parameters)
+					template_body=self.template_body, parameters=self.parameters, capabilities=["CAPABILITY_IAM"])
 			elif self.lab_dir == "sns":
 				print "Creating new '{0}' stack...".format(self.stack_name)
 				stack = self.cfn_connection.create_stack(self.stack_name,
-					template_body=self.template_body, parameters=self.parameters, disable_rollback=True)
+					template_body=self.template_body, parameters=self.parameters, disable_rollback=True, capabilities=["CAPABILITY_IAM"])
 			else:
 				print "Creating new '{0}' stack...".format(self.stack_name)
 				stack = self.cfn_connection.create_stack(self.stack_name, 
 					template_body=self.template_body, parameters=self.parameters,
-					notification_arns=self.notification_arns, disable_rollback=True)
+					notification_arns=self.notification_arns, disable_rollback=True, capabilities=["CAPABILITY_IAM"])
 		except BotoServerError as e:
 			if "No updates are to be performed" in e.message:
 				print "No updates are to be performed"

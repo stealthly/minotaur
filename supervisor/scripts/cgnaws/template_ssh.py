@@ -17,7 +17,8 @@
 from cgnaws import *
 from argparse import ArgumentParser
 import fileinput
-import re, sys
+import re, sys, os
+from boto import iam
 
 with open("/root/.aws/config") as f:
     for line in f.readlines():
@@ -25,6 +26,10 @@ with open("/root/.aws/config") as f:
             aws_access_key_id = line.split()[-1]
         elif line.startswith('aws_secret_access_key'):
             aws_secret_access_key = line.split()[-1]
+
+def get_username():
+    iam_connection = iam.connect_to_region("universal", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+    return iam_connection.get_user()["get_user_response"]["get_user_result"]["user"]["user_name"]
 
 accounts = { 'bdoss' : { 'regions': ['us-east-1'], 'access-key' : aws_access_key_id, 'secret-key' : aws_secret_access_key} }
 
@@ -38,18 +43,20 @@ def get_ip(environment):
 
 pattern = re.compile("[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|BASTION_IP")
 
+config = """Host *{0}*
+IdentityFile /root/.ssh/{1}
+User ubuntu
+ProxyCommand ssh -i /root/.ssh/private.key {2}@{3} nc $(dig +short %h) %p
+"""
+
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Template ssh config file with bastion IP in arbitrary environment")
-    parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment where bastion is deployed')
-    args = parser.parse_args()
-    try:
-        bastion_ip = get_ip(args.environment)
-        print "Bastion IP: "+get_ip(args.environment)
-    except:
-        print("Failed to fetch bastion public IP")
-        sys.exit(1)
-    for line in fileinput.input("/root/.ssh/config", inplace=True):
-        if pattern.search(line):
-            line = line.replace(pattern.findall(line)[0], bastion_ip)
-        print(line.rstrip())
+    with open("/root/.ssh/config", "w") as f:
+        for key in (i for i in os.listdir("/root/.ssh/") if i.endswith(".key") and not i.startswith("private")):
+            try:
+                environment = key.replace('.key','')
+                bastion_ip = get_ip(environment)
+                print("Bastion IP: "+bastion_ip+" in \""+environment+"\" environment")
+                f.write(config.format(environment, key, get_username(), bastion_ip))
+            except:
+                print("Failed to fetch bastion public IP for \""+environment+"\" environment")
     print "SSH config was successfuly templated"

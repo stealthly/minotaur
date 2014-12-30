@@ -36,23 +36,13 @@ NOTICE: If you no longer want user to be able to access the environment - DO NOT
 
 Bastion is pulling these files every 5 minutes, so be patient and let Bastion configure itself before trying to log in.
 
-Next step is appending something like this to your SSH config file:
+Next step is to use template_ssh script to template your ssh config file. Whole config file will be created and populated with your user name and bastion ip for each environment deployed. Reuse this script every time you create a new 
 
 ```
-# BDOSS dev environment
-Host 10.0.*.*
-    IdentityFile ~/.ssh/bdoss-dev.pem 
-    User ubuntu
-    ProxyCommand  ssh -i ~/.ssh/personal_ssh_key <personal_id>@<bastion_public_ip> nc %h %p
+templatessh
 ```
 
-Or you can use template_ssh script to template your ssh config file(only bastion public ip will be templated).
-
+Now you can log in to the instances in, for example, bdoss-dev environment simply by typing:
 ```
-templatessh -e <environment>
-```
-
-Now you can log in to the instances simply by typing:
-```
-ssh 10.0.X.X
+ssh ip-10-0-X-X.bdoss-dev.aws
 ```

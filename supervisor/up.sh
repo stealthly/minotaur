@@ -21,7 +21,7 @@ echo "Building ..."
 docker build -t $CONTAINER_NAME .
 
 echo "Spawning ..."
-docker run --name $CONTAINER_NAME -h supervisor -i -t -v $(pwd)/../:/deploy:ro supervisor
+docker run -e "USER"=$1 --dns="127.0.0.1" --dns-search="aws" --name $CONTAINER_NAME -h supervisor -i -t -v $(pwd)/../:/deploy:ro supervisor /sbin/my_init -- bash -l
 
 echo "Cleaning-up ..."
 docker rm -f $CONTAINER_NAME

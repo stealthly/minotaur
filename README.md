@@ -80,7 +80,7 @@ Stack updated.
 #### Deploy All Infrastructure Components
 Deploy all infrastructure components one after another. In approximately 12 minutes infrastructure will be up and running.
 ```
-root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small
+root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small -c 10.0.0.8/24
 Template successfully validated.
 Creating new 'sns-cloudformation-notifications-bdoss-dev-us-east-1' stack...
 Stack created.
@@ -93,6 +93,8 @@ Stack created.
 ```
 Notice that this will not deploy iam policies and iam user to group additions, so you must do it explicitly.
 You can easily add users to specific security group in [iam user to group additions](infrastructure/aws/iamusertogroupadditions/aws/template.cfn) cloudformation template(default user there is admin)
+
+Recommended subnet scheme is as follow: for each vpc of, for example, 10.0.0.0/21 there is 2 public 10.0.0.0/23, 10.0.0.4/23 subnets, 2 private 10.0.0.2/24, 10.0.0.6/24 subnets and 2 reserved 10.0.0.3/24, 10.0.0.7/24 subnets. So there is 3 subnets(public, private and reserved) per one availability zone.
 ```
 root@supervisor:/deploy# minotaur infrastructure deploy iampolicies
 Template successfully validated.
@@ -150,9 +152,18 @@ Stack deployed.
 ```
 
 #### SSH In To The Instance
-Before you will actually ssh you must run `templatessh -e <environment>` to change current bastion public IP in ssh config.
+Before you will actually ssh you must run `templatessh` script to populate ssh config. Don't forget to reuse it every time you create a new environment.
 
 Now you can log in to the instances simply by typing:
 ```
-ssh 10.0.X.X
+ssh ip-10-0-X-X.ENVIRONMENT.aws
 ```
+
+#### Local DNS Names
+Supervisor has internal local dns system. It uses SkyDNS with etcd backend. DNS records are populated every minute using cron job, so be patient and give it a little time(up to a minute) right after container run to populate everything properly. Right after that you can find local DNS names of instances using `awsinfo` command.
+
+#### Relevant readme's
+
+Look into [Supervisor README](supervisor/README.md) to learn more about supervisor docker container and files required to run it.
+
+Look into [Bastion README](infrastructure/aws/bastion/README.md) to learn more about user credentials for ssh access.
