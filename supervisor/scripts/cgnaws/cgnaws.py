@@ -65,8 +65,13 @@ def get_instances_info(instances):
 				local_dns_name = socket.gethostbyaddr(instance.private_ip_address)[0]
 			except:
 				local_dns_name = "unknown"
+			public_ip = instance.ip_address
+			if public_ip == None and instance.interfaces != [] and 'publicIp' in instance.interfaces[0].__dict__.keys():
+				public_ip = instance.interfaces[0].publicIp
+			elif public_ip == None and len(instance.interfaces) > 1 and 'publicIp' in instance.interfaces[1].__dict__.keys():
+				public_ip = instance.interfaces[1].publicIp
 			info[name].append({ 'id' : instance.id, 'type': instance.instance_type, 'state': instance.state, \
-					'private-ip': instance.private_ip_address, 'public-ip': instance.ip_address, \
+					'private-ip': instance.private_ip_address, 'public-ip': public_ip, \
 					'public-dns': instance.public_dns_name, 'tags' : instance.tags, 'local-dns': local_dns_name})
 	return info
 

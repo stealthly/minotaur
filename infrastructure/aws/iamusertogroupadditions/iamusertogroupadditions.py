@@ -19,7 +19,7 @@ from ..infrastructure import Infrastructure
 
 class Iamusertogroupadditions(Infrastructure):
 	def __init__(self):
-		super(Iamusertogroupadditions, self).__init__(environment='', deployment='', region='', zone='')
+		super(Iamusertogroupadditions, self).__init__(environment='', deployment='', region='us-east-1', zone='')
 		self.stack_name = "iam-user-to-group-additions"
 
 parser = ArgumentParser(description='Deploy iam user to group additions to an AWS CloudFormation environment.')

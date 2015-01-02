@@ -16,6 +16,7 @@
 # limitations under the License.
 from boto import cloudformation as cfn, sns, vpc
 from boto.exception import BotoServerError
+from boto import iam
 import os, sys
 from time import sleep
 
@@ -36,12 +37,14 @@ class Infrastructure(object):
 		self.cfn_connection = cfn.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 		self.sns_connection = sns.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 		self.vpc_connection = vpc.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-		
+		self.iam_connection = iam.connect_to_region("universal", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+
 		# Temporary python class -> directory name hack
 		self.lab_dir = self.__class__.__name__.lower()
 
 		self.stack_name = "-".join([self.lab_dir, environment, deployment, region, zone])
-		self.notification_arns = self.get_sns_topic("cloudformation-notifications-" + environment)
+		if environment != '':
+			self.notification_arns = self.get_sns_topic("cloudformation-notifications-" + environment)
 		self.parameters = []
 
 		# Prepare the CFN template

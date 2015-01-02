@@ -61,6 +61,10 @@
         "RepoUrl": {
             "Description": "Public repository url where user info is stored",
             "Type": "String"
+        },
+        "RoleName": {
+            "Description": "Name of IAM role to use with instance profile",
+            "Type": "String"
         }
     },
     "Mappings": {
@@ -124,9 +128,9 @@
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
-                "Roles": [
-                    "bastion"
-                ]
+                "Roles": [ {
+                    "Ref": "RoleName"
+                } ]
             }
         },
         "LaunchConfig": {

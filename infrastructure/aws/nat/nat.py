@@ -24,12 +24,19 @@ class Nat(Infrastructure):
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
 		private_route_table_id = self.get_route_table(private_subnet_id).id
+		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+		for role in self.iam_connection.list_roles()['list_roles_response']['list_roles_result']['roles']:
+			if 'Nat' in role['role_name']:
+				role_name = role['role_name']
 		self.parameters.append(("KeyName",             environment))
 		self.parameters.append(("Environment",         environment))
 		self.parameters.append(("VpcId",               vpc_id))
 		self.parameters.append(("InstanceType",        instance_type))
 		self.parameters.append(("PublicSubnetId",      public_subnet_id))
 		self.parameters.append(("PrivateRouteTableId", private_route_table_id))
+		self.parameters.append(("AvailabilityZone",    zone))
+		self.parameters.append(("AsgTopicArn",         topic_arn))
+		self.parameters.append(("RoleName",            role_name))
 		self.stack_name = "-".join([self.lab_dir, environment, region, zone])
 
 parser = ArgumentParser(description='Deploy nat to an AWS CloudFormation environment.')

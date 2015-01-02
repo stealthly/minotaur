@@ -19,7 +19,7 @@ from ..infrastructure import Infrastructure
 
 class Iampolicies(Infrastructure):
 	def __init__(self):
-		super(Iampolicies, self).__init__(environment='', deployment='', region='', zone='')
+		super(Iampolicies, self).__init__(environment='', deployment='', region='us-east-1', zone='')
 		self.stack_name = "iam-policies"
 
 parser = ArgumentParser(description='Deploy iam policies to an AWS CloudFormation environment.')

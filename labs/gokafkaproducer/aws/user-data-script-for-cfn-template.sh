@@ -41,7 +41,7 @@ apt-get -y install git-core build-essential awscli
 
 # Install rvm for the latest ruby version
 command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-curl -sSL https://get.rvm.io | bash -s stable --ruby
+curl -sSL https://get.rvm.io | bash -s stable --ruby=2.1
 source /usr/local/rvm/scripts/rvm
 rvm use 2.1 --default
 rvm rubygems current

@@ -2,6 +2,22 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "All IAM policies",
     "Resources": {
+        "Nat": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Version" : "2012-10-17",
+                "Statement": [ {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": [ "ec2.amazonaws.com" ]
+                    },
+                    "Action": [ "sts:AssumeRole" ]
+                } ]
+            },
+            "Path": "/"
+            }
+       },
         "FullAccess": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
@@ -317,7 +333,8 @@
                 "PolicyName": "attach-network-interface-access",
                 "Roles": [
                     "bastion",
-                    "generic-dev"
+                    "generic-dev",
+                    { "Ref": "Nat" }
                 ],
                 "PolicyDocument": {
                     "Statement": [
@@ -338,7 +355,8 @@
                 "PolicyName": "describe-network-interfaces-access",
                 "Roles": [
                     "bastion",
-                    "generic-dev"
+                    "generic-dev",
+                    { "Ref": "Nat" }
                 ],
                 "PolicyDocument": {
                     "Statement": [
@@ -366,6 +384,86 @@
                             "Effect": "Allow",
                             "Action": [
                                 "ec2:AttachVolume"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "CreateRouteAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "create-route-access",
+                "Roles": [
+                    { "Ref": "Nat" }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:CreateRoute"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "DescribeRouteTablesAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "describe-route-tables-access",
+                "Roles": [
+                    { "Ref": "Nat" }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DescribeRouteTables"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "DeleteRouteAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "delete-route-access",
+                "Roles": [
+                    { "Ref": "Nat" }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:DeleteRoute"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
+        },
+        "ModifyNetworkInterfaceAttributeAccess": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "modify-network-interface-attribute-access",
+                "Roles": [
+                    { "Ref": "Nat" }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:ModifyNetworkInterfaceAttribute"
                             ],
                             "Resource": "*"
                         }

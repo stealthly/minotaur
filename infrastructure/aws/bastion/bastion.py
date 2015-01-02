@@ -24,6 +24,9 @@ class Bastion(Infrastructure):
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+		for role in self.iam_connection.list_roles()['list_roles_response']['list_roles_result']['roles']:
+			if 'bastion' in role['role_name']:
+				role_name = role['role_name']
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Environment",      environment))
 		self.parameters.append(("VpcId",            vpc_id))
@@ -33,6 +36,7 @@ class Bastion(Infrastructure):
 		self.parameters.append(("AsgTopicArn",      topic_arn))
 		self.parameters.append(("InstanceType",     instance_type))
 		self.parameters.append(("RepoUrl",          repo_url))
+		self.parameters.append(("RoleName",         role_name))
 		self.stack_name = "-".join([self.lab_dir, environment, region, zone])
 
 parser = ArgumentParser(description='Deploy bastion to an AWS CloudFormation environment.')
