@@ -24,6 +24,7 @@ class MesosMaster(Lab):
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+		role_name = self.get_role_name("GenericDev")
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Environment",      environment))
 		self.parameters.append(("Deployment",       deployment))
@@ -37,6 +38,7 @@ class MesosMaster(Lab):
 		self.parameters.append(("PrivateSubnetId",  private_subnet_id))
 		self.parameters.append(("PublicSubnetId",   public_subnet_id))
 		self.parameters.append(("AsgTopicArn",      topic_arn))
+		self.parameters.append(("RoleName",         role_name))
 
 parser = ArgumentParser(description='Deploy Mesos Master(s) to an AWS CloudFormation environment.')
 parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')

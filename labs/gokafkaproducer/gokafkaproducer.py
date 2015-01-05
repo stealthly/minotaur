@@ -23,6 +23,7 @@ class GoKafkaProducer(Lab):
         vpc_id = self.get_vpc(environment).id
         public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
         topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+        role_name = self.get_role_name("GenericDev")
         self.parameters.append(("KeyName",          environment))
         self.parameters.append(("Environment",      environment))
         self.parameters.append(("Deployment",       deployment))
@@ -33,6 +34,7 @@ class GoKafkaProducer(Lab):
         self.parameters.append(("VpcId",            vpc_id))
         self.parameters.append(("PublicSubnetId",   public_subnet_id))
         self.parameters.append(("AsgTopicArn",      topic_arn))
+        self.parameters.append(("RoleName",         role_name))
 
 parser = ArgumentParser(description='Deploy Kafka Producer(s) to an AWS CloudFormation environment.')
 parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')

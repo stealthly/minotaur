@@ -23,6 +23,7 @@ class Zookeeper(Lab):
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+		role_name = self.get_role_name("GenericDev")
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Deployment",       deployment))
 		self.parameters.append(("Environment",      environment))
@@ -33,6 +34,7 @@ class Zookeeper(Lab):
 		self.parameters.append(("NumberOfNodes",    instance_count))
 		self.parameters.append(("InstanceType",     instance_type))
 		self.parameters.append(("AsgTopicArn",      topic_arn))
+		self.parameters.append(("RoleName",         role_name))
 
 parser = ArgumentParser(description='Deploy ZooKeeper Ensemble to an AWS CloudFormation environment.')
 parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
