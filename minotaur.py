@@ -51,13 +51,7 @@ class Minotaur:
 		for module in infrastructure_list:
 			exec("parser_{0} = subparsers_infrastructure_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
 		for module in lab_list:
-			if module == "mesos":
-				exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}')".format(module))
-				exec("subparsers_{0} = parser_{0}.add_subparsers()".format(module))
-				exec("parser_{0}_slave = subparsers_{0}.add_parser(name='slave', add_help=False, parents=[{0}.parser_slave])".format(module))
-				exec("parser_{0}_master = subparsers_{0}.add_parser(name='master', add_help=False, parents=[{0}.parser_master])".format(module))
-			else:
-				exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
+			exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
 		parser_all = subparsers_infrastructure_deploy.add_parser(name="all")
 		parser_all.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 		parser_all.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')

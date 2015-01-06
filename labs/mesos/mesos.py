@@ -16,10 +16,11 @@
 # limitations under the License.
 from argparse import ArgumentParser
 from ..lab import Lab
+import sys
 
 class Mesos(Lab):
 	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, mesos_version, zk_version, aurora_url):
-		super(MesosMaster, self).__init__(environment, deployment, region, zone, template="-".join([sys.argv[4],'template.cfn']))
+		super(Mesos, self).__init__(environment, deployment, region, zone, template="-".join([sys.argv[4],'template.cfn']))
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
@@ -56,7 +57,10 @@ parser_slave = subparsers_mesos.add_parser(name="slave", add_help=False, parents
 parser_master.add_argument('-a', '--aurora-url', default='', help='The Aurora scheduler URL')
 
 def main():
-	args, unknown = parser.parse_known_args()
+	if sys.argv[4] == "master":
+		args, unknown = parser_master.parse_known_args()
+	else:
+		args, unknown = parser_slave.parse_known_args()
 	lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 
 		str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version, args.aurora_url)
 	lab.deploy()
