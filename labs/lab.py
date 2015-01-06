@@ -39,14 +39,14 @@ class Lab(object):
 		self.iam_connection = iam.connect_to_region("universal", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
 
 		# Temporary python class -> directory name hack
-		lab_dir = self.__class__.__name__.lower()
+		self.lab_dir = self.__class__.__name__.lower()
 
-		self.stack_name = "-".join([lab_dir, environment, deployment, region, zone])
+		self.stack_name = "-".join([self.lab_dir, environment, deployment, region, zone])
 		self.notification_arns = self.get_sns_topic("cloudformation-notifications-" + environment)
 		self.parameters = []
 
 		# Prepare the CFN template
-		self.template_url = "/".join([os.path.dirname(os.path.realpath(__file__)), lab_dir, vpc_provider, template])
+		self.template_url = "/".join([os.path.dirname(os.path.realpath(__file__)), self.lab_dir, vpc_provider, template])
 		self.template_body = self.read_file(self.template_url, max_template_size)
 		self.validate_template()
 

@@ -19,12 +19,13 @@ from ..lab import Lab
 import sys
 
 class Mesos(Lab):
-	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, mesos_version, zk_version, aurora_url):
+	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, mesos_version, zk_version, aurora_url=''):
 		super(Mesos, self).__init__(environment, deployment, region, zone, template="-".join([sys.argv[4],'template.cfn']))
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
 		role_name = self.get_role_name("GenericDev")
+		self.stack_name = "-".join([self.lab_dir, sys.argv[4], environment, deployment, region, zone])
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Environment",      environment))
 		self.parameters.append(("Deployment",       deployment))
@@ -42,7 +43,7 @@ class Mesos(Lab):
 			self.parameters.append(("PublicSubnetId", public_subnet_id))
 			self.parameters.append(("AuroraUrl",      aurora_url))  # Needs to be optional in CFN template
 
-parser = ArgumentParser(description='Deploy Mesos Master(s) to an AWS CloudFormation environment.')
+parser = ArgumentParser(description='Deploy Mesos Master(s) or Slave(s) to an AWS CloudFormation environment.')
 subparsers_mesos = parser.add_subparsers()
 parser_master = subparsers_mesos.add_parser(name="master", add_help=True)
 parser_master.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
@@ -59,10 +60,12 @@ parser_master.add_argument('-a', '--aurora-url', default='', help='The Aurora sc
 def main():
 	if sys.argv[4] == "master":
 		args, unknown = parser_master.parse_known_args()
-	else:
+		lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 
+			str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version, args.aurora_url)
+	elif sys.argv[4] == "slave":
 		args, unknown = parser_slave.parse_known_args()
-	lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 
-		str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version, args.aurora_url)
+		lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 
+			str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version)
 	lab.deploy()
 
 if __name__ == '__main__':
