@@ -1,3 +1,3 @@
 {
-  "run_list": ["recipe[kafka_broker]" ]
+  "run_list": [ "recipe[kafka_broker]" ]
 }
