@@ -175,3 +175,12 @@ class Infrastructure(object):
 			return self.vpc_connection.get_all_route_tables(filters=[("association.subnet-id", subnet_id)])[0]
 		else:
 			return None
+
+	"""
+	Find a full role name by given partial name.
+	"""
+	def get_role_name(self, name):
+		for role in self.iam_connection.list_roles()['list_roles_response']['list_roles_result']['roles']:
+			if name in role['role_name']:
+				return role['role_name']
+		return None

@@ -17,7 +17,39 @@
             },
             "Path": "/"
             }
-       },
+        },
+        "Bastion": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Version" : "2012-10-17",
+                "Statement": [ {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": [ "ec2.amazonaws.com" ]
+                    },
+                    "Action": [ "sts:AssumeRole" ]
+                } ]
+            },
+            "Path": "/"
+            }
+        },
+        "GenericDev": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+            "AssumeRolePolicyDocument": {
+                "Version" : "2012-10-17",
+                "Statement": [ {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": [ "ec2.amazonaws.com" ]
+                    },
+                    "Action": [ "sts:AssumeRole" ]
+                } ]
+            },
+            "Path": "/"
+            }
+        },
         "FullAccess": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
@@ -245,7 +277,7 @@
             "Properties": {
                 "PolicyName": "ec2-describe-instances",
                 "Roles": [
-                    "generic-dev"
+                    { "Ref": "GenericDev" }
                 ],
                 "PolicyDocument": {
                     "Statement": [
@@ -305,7 +337,7 @@
             "Properties": {
                 "PolicyName": "read-only-s3-deploy-bucket-access",
                 "Roles": [
-                    "generic-dev"
+                    { "Ref": "GenericDev" }
                 ],
                 "PolicyDocument": {
                     "Statement": [
@@ -332,8 +364,8 @@
             "Properties": {
                 "PolicyName": "attach-network-interface-access",
                 "Roles": [
-                    "bastion",
-                    "generic-dev",
+                    { "Ref": "Bastion" },
+                    { "Ref": "GenericDev" },
                     { "Ref": "Nat" }
                 ],
                 "PolicyDocument": {
@@ -354,8 +386,8 @@
             "Properties": {
                 "PolicyName": "describe-network-interfaces-access",
                 "Roles": [
-                    "bastion",
-                    "generic-dev",
+                    { "Ref": "Bastion" },
+                    { "Ref": "GenericDev" },
                     { "Ref": "Nat" }
                 ],
                 "PolicyDocument": {
@@ -376,7 +408,7 @@
             "Properties": {
                 "PolicyName": "attach-volume-access",
                 "Roles": [
-                    "bastion"
+                    { "Ref": "Bastion" }
                 ],
                 "PolicyDocument": {
                     "Statement": [
@@ -476,7 +508,7 @@
             "Properties": {
                 "PolicyName": "describe-volumes-access",
                 "Roles": [
-                    "bastion"
+                    { "Ref": "Bastion" }
                 ],
                 "PolicyDocument": {
                     "Statement": [

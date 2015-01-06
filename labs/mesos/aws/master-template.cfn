@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Mesos slave instances in a private subnet",
+    "Description": "Mesos master instance(s) in a public subnet with EIP attached",
     "Parameters": {
         "KeyName": {
             "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
@@ -25,6 +25,10 @@
         },
         "AvailabilityZone": {
             "Description": "Availability zone of the subnets",
+            "Type": "String"
+        },
+        "PublicSubnetId": {
+            "Description": "ID of the public subnet",
             "Type": "String"
         },
         "PrivateSubnetId": {
@@ -68,8 +72,16 @@
             "Description": "Zookeeper version to be deployed if no external zookeeper servers found",
             "Type": "String"
         },
+        "AuroraUrl": {
+            "Description": "URL of Aurora tarball to be deployed",
+            "Type": "String"
+        },
         "AsgTopicArn": {
             "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        },
+        "RoleName": {
+            "Description": "Name of IAM role to use with instance profile",
             "Type": "String"
         }
     },
@@ -81,18 +93,71 @@
         }
     },
     "Resources": {
+        "ElasticIp": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "PublicNetworkInterface" : {
+            "Type" : "AWS::EC2::NetworkInterface",
+            "Properties" : {
+                "GroupSet": [
+                    {
+                        "Ref": "PublicSecurityGroup"
+                    }
+                ],
+                "SubnetId": {
+                    "Ref": "PublicSubnetId"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "mesos-master",
+                                    {
+                                        "Ref": "Deployment"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "ElasticIpAssociation": {
+            "Type": "AWS::EC2::EIPAssociation",
+            "Properties": {
+                "AllocationId" : {
+                    "Fn::GetAtt" : [
+                        "ElasticIp",
+                        "AllocationId"
+                    ]
+                },
+                "NetworkInterfaceId": {
+                    "Ref": "PublicNetworkInterface"
+                }
+            }
+        },
         "InstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
-                "Roles": [
-                    "generic-dev"
-                ]
+                "Roles": [ {
+                    "Ref": "RoleName"
+                } ]
             }
         },
         "LaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
+                "InstanceMonitoring" : false,
                 "InstanceType": {
                     "Ref": "InstanceType"
                 },
@@ -110,12 +175,13 @@
                 },
                 "SecurityGroups": [
                     {
-                        "Ref": "PrivateSecurityGroup"
+                        "Ref": "PublicSecurityGroup"
                     }
                 ],
                 "IamInstanceProfile": {
                     "Ref": "InstanceProfile"
                 },
+                "AssociatePublicIpAddress": true,
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
@@ -126,11 +192,13 @@
                                 "REGION=\"", { "Ref": "AWS::Region" }, "\"\n",
                                 "DEPLOYMENT=\"", { "Ref": "Deployment" }, "\"\n",
                                 "ENVIRONMENT=\"", { "Ref": "Environment" }, "\"\n",
+                                "AURORA_URL=\"", { "Ref": "AuroraUrl" }, "\"\n",
                                 "MESOS_VERSION=\"", { "Ref": "MesosVersion" }, "\"\n",
                                 "ZK_VERSION=\"", { "Ref": "ZookeeperVersion" }, "\"\n",
+                                "PUBLIC_NETWORK_INTERFACE_ID=\"", { "Ref": "PublicNetworkInterface" }, "\"\n",
                                 "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
                                 "\n",
-                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nLAB_PATH=\"labs/mesosmaster\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Update repos and install dependencies\napt-get update\napt-get -y install git-core build-essential awscli\n\n# Install rvm for the latest ruby version\ncommand curl -sSL https://rvm.io/mpapis.asc | gpg --import -\ncurl -sSL https://get.rvm.io | bash -s stable --ruby=2.1\nsource /usr/local/rvm/scripts/rvm\nrvm use 2.1 --default\nrvm rubygems current\n\n# Get latest version of jq\nwget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq\nchmod +x /usr/local/bin/jq\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone https://git@github.com/stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Install Bundler and community cookbooks with librarian\naws s3 cp --region $REGION s3://bdoss-deploy/gems/librarian-0.1.2.gem /tmp/librarian-0.1.2.gem\ngem install /tmp/librarian-0.1.2.gem --no-ri --no-rdoc\ngem install bundler --no-ri --no-rdoc\ncd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install\n\n# Find zookeeper nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nZK_SERVERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# If no zookeeper nodes found - use zookeepers on mesos masters\nif [ -z \"$ZK_SERVERS\" ]; then\n    NODES_FILTER=\"Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT\"\n    ZK_SERVERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\nfi\n\n# Run Chef\nmesos_version=\"$MESOS_VERSION\" \\\nzk_version=\"$ZK_VERSION\" \\\nzk_servers=\"$ZK_SERVERS\" \\\nchef-solo -c \"$REPO_DIR/$LAB_PATH/chef/solo.rb\" -j \"$REPO_DIR/$LAB_PATH/chef/solo_slave.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END"
+                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nLAB_PATH=\"labs/mesos\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\n\n# Update repos and install dependencies\napt-get update\napt-get -y install git-core build-essential awscli\n\n# Install rvm for the latest ruby version\ncommand curl -sSL https://rvm.io/mpapis.asc | gpg --import -\ncurl -sSL https://get.rvm.io | bash -s stable --ruby=2.1\nsource /usr/local/rvm/scripts/rvm\nrvm use 2.1 --default\nrvm rubygems current\n\n# Get latest version of jq\nwget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq\nchmod +x /usr/local/bin/jq\n\nmkdir -p \"$WORKING_DIR\"\nchmod 0755 \"$WORKING_DIR\"\n\ngit clone https://git@github.com/stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Install Bundler and community cookbooks with librarian\naws s3 cp --region $REGION s3://bdoss-deploy/gems/librarian-0.1.2.gem /tmp/librarian-0.1.2.gem\ngem install /tmp/librarian-0.1.2.gem --no-ri --no-rdoc\ngem install bundler --no-ri --no-rdoc\ncd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install\n\n# Find zookeeper nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nZK_SERVERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# If no zookeeper nodes found - form zookeeper cluster with zk's on mesos masters\n# Providing list of zk servers is also mandatory for aurora\nif [ -z \"$ZK_SERVERS\" ]; then\n    NODES_FILTER=\"Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT\"\n    MESOS_MASTERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\nfi\n\n# Run Chef\nmesos_version=\"$MESOS_VERSION\" \\\nzk_version=\"$ZK_VERSION\" \\\nmesos_masters=\"$MESOS_MASTERS\" \\\nzk_servers=\"$ZK_SERVERS\" \\\naurora_url=\"$AURORA_URL\" \\\nchef-solo -c \"$REPO_DIR/$LAB_PATH/chef/solo.rb\" -j \"$REPO_DIR/$LAB_PATH/chef/solo_master.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END"
                             ]
                         ]
                     }
@@ -142,7 +210,7 @@
             "Properties": {
                 "VPCZoneIdentifier": [
                     {
-                        "Ref": "PrivateSubnetId"
+                        "Ref": "PublicSubnetId"
                     }
                 ],
                 "AvailabilityZones": [
@@ -180,7 +248,7 @@
                             "Fn::Join": [
                                 ".",
                                 [
-                                    "mesos-slave",
+                                    "mesos-master",
                                     {
                                         "Ref": "Deployment"
                                     },
@@ -195,10 +263,10 @@
                 ]
             }
         },
-        "PrivateSecurityGroup": {
+        "PublicSecurityGroup": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
-                "GroupDescription": "Enable private access to the Bastion host",
+                "GroupDescription": "Enable public access to mesos master",
                 "VpcId": {
                     "Ref": "VpcId"
                 },
@@ -207,21 +275,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": "0.0.0.0/0"
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "1024",
-                        "ToPort": "65535",
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
-                "SecurityGroupEgress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "ToPort": "22",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": "10.0.0.0/8"
                     },
                     {
                         "IpProtocol": "tcp",
@@ -231,15 +285,15 @@
                     },
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "443",
-                        "ToPort": "443",
+                        "FromPort": "5050",
+                        "ToPort": "5050",
                         "CidrIp": "0.0.0.0/0"
-                    },                   
+                    },
                     {
                         "IpProtocol": "tcp",
                         "FromPort": "1024",
                         "ToPort": "65535",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": "10.0.0.0/8"
                     }
                 ]
             }

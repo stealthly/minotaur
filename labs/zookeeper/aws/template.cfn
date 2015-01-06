@@ -65,6 +65,10 @@
         "AsgTopicArn": {
             "Description": "Topic ARN that the auto-scaling group should use to send notifications",
             "Type": "String"
+        },
+        "RoleName": {
+            "Description": "Name of IAM role to use with instance profile",
+            "Type": "String"
         }
     },
     "Mappings": {
@@ -79,9 +83,9 @@
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
-                "Roles": [
-                    "generic-dev"
-                ]
+                "Roles": [ {
+                    "Ref": "RoleName"
+                } ]
             }
         },
         "LaunchConfig": {

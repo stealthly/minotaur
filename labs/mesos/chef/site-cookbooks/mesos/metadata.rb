@@ -1,4 +1,4 @@
 depends "apt"
 depends "zookeeper"
-depends 'hostsfile'
-name 'mesos'
+depends "hostsfile"
+name "mesos"
