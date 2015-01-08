@@ -1,3 +1,4 @@
 source 'https://rubygems.org'
 gem 'librarian-chef'
 gem 'ipaddr_extensions', '1.0.0'
+gem 'zookeeper'
