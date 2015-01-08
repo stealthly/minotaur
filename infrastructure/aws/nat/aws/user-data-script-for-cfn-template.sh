@@ -19,32 +19,27 @@
 # instance's UserData property.
 exec > >(tee /var/log/user-data.log) 2>&1
 
-echo BEGIN
-
 # Don't copy the below - each of these needs to be handled out-of-band
-#REGION_ID="{ "Ref": "AWS::Region" }"
-#ENVIRONMENT="{ "Ref": "Environment" }"
-#PUBLIC_NETWORK_INTERFACE_ID="{ "Ref": "PublicNetworkInterface" }"
-#INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
-#REPO_URL="{ "Ref": "RepoUrl" }"
+#export AWS_DEFAULT_REGION="{ "Ref": "AWS::Region" }"
+#ROUTE_TABLE_ID="{ "Ref": "PrivateRouteTableId" }"
+#INSTANCE_WAIT_HANDLE_URL={ "Ref": "WaitForInstanceWaitHandle" }
 
-WORKING_DIR="/deploy"
-REPO_DIR="$WORKING_DIR/repo"
-BASTION_PATH="infrastructure/aws/bastion"
 INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+DESCRIBE_INTERFACES_RESPONSE=$(aws ec2 describe-network-interfaces --filters "{\"Name\":\"attachment.instance-id\", \"Values\":[\"$INSTANCE_ID\"]}")
 
-# Attach public network interface
-aws ec2 attach-network-interface --region "$REGION_ID" --instance-id "$INSTANCE_ID" --network-interface-id "$PUBLIC_NETWORK_INTERFACE_ID" --device-index=1
+yum -y install jq
 
-yum -y install git-core
+NETWORK_INTERFACE_ID=$(echo "$DESCRIBE_INTERFACES_RESPONSE" | jq --raw-output ".[\"NetworkInterfaces\"][0][\"NetworkInterfaceId\"]")
+DESCRIBE_ROUTE_TABLES_RESPONSE=$(aws ec2 describe-route-tables --filters "{\"Name\":\"route-table-id\", \"Values\":[\"$ROUTE_TABLE_ID\"]}")
 
-git clone "$REPO_URL" "$REPO_DIR"
+# Delete existing route in route table
+if [[ $DESCRIBE_ROUTE_TABLES_RESPONSE == *"0.0.0.0"* ]]
+then aws ec2 delete-route --route-table-id $ROUTE_TABLE_ID --destination-cidr-block 0.0.0.0/0
+fi
 
-# Install Chef
-curl -L https://www.opscode.com/chef/install.sh | bash
-
-# Run Chef
-environment=$ENVIRONMENT chef-solo -c "$REPO_DIR/$BASTION_PATH/chef/solo.rb" -j "$REPO_DIR/$BASTION_PATH/chef/solo.json"
+# Create new route in route table
+aws ec2 create-route --route-table-id $ROUTE_TABLE_ID --destination-cidr-block 0.0.0.0/0 --network-interface-id $NETWORK_INTERFACE_ID
+aws ec2 modify-network-interface-attribute --network-interface-id $NETWORK_INTERFACE_ID --source-dest-check "{\"Value\": false}"
 
 # Notify wait handle
 WAIT_HANDLE_JSON="{\"Status\": \"SUCCESS\", \"Reason\": \"Done\", \"UniqueId\": \"1\", \"Data\": \"$INSTANCE_ID\"}"

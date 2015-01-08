@@ -33,7 +33,7 @@ echo BEGIN
 
 WORKING_DIR="/deploy"
 REPO_DIR="$WORKING_DIR/repo"
-LAB_PATH="labs/mesosmaster"
+LAB_PATH="labs/mesos"
 INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 
 # Update repos and install dependencies

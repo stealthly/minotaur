@@ -50,9 +50,6 @@ rvm rubygems current
 wget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq
 chmod +x /usr/local/bin/jq
 
-mkdir -p "$WORKING_DIR"
-chmod 0755 "$WORKING_DIR"
-
 git clone https://git@github.com/stealthly/minotaur.git "$REPO_DIR"
 
 # Install Chef
