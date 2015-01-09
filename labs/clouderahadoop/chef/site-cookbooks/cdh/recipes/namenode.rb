@@ -213,7 +213,7 @@ node['hadoop']['journalnodes']['ips'].each_with_index do |jn,index|
   znode "/chef/hadoop/journalnodes/#{index}/status" do
     action :expect
     content "ready"
-    retries 20
+    retries 90
     retry_delay 10
   end
 end
