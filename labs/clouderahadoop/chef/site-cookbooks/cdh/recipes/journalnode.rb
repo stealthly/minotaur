@@ -55,7 +55,7 @@ end
 # Updating correspongind znode
 # with 'ready' status
 
-znode "/chef/hadoop/journalnodes/#{node[:hadoop][:myid]}/status" do
+znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status" do
   action :set
   content 'ready'
 end

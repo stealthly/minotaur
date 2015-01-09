@@ -23,14 +23,14 @@ znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}"
 znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ip"
 
 # Put myip to corresponding znode
-znode "/chef/hadoop/namenodes/#{node[:hadoop][:myid]}/ip" do
+znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ip" do
   action :set
   content "#{node['hadoop']['myip']}"
 end
 
 #----------------
 # Set hostname
-hostname = "#{node[:hadoop][:namenodes][:dns][:basename]}-#{node[:hadoop][:myid]}.#{node['hadoop']['dns']['clustername']}"
+hostname = "#{node['hadoop']['namenodes']['dns']['basename']}-#{node['hadoop']['myid']}.#{node['hadoop']['dns']['clustername']}"
 
 execute "hostname #{hostname}" do
   only_if { node['hostname'] != hostname }
@@ -61,11 +61,11 @@ node.set['hadoop']['hdfs_site']['dfs.ha.fencing.ssh.private-key-files'] = "#{nod
 #
 nnodes_list = []
 node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
-  nn_hostname = "#{node[:hadoop][:namenodes][:dns][:basename]}-#{index}"
-  nn_fqdn = "#{nn_hostname}.#{node[:hadoop][:dns][:clustername]}"
+  nn_hostname = "#{node['hadoop']['namenodes']['dns']['basename']}-#{index}"
+  nn_fqdn = "#{nn_hostname}.#{node['hadoop']['dns']['clustername']}"
   nnodes_list << nn_hostname
-  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
-  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
 
   # /etc/hosts entry
   hostsfile_entry "#{ip}" do
@@ -73,13 +73,13 @@ node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
     action :append
   end
 end
-node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node[:hadoop][:dns][:clustername]}"] = "#{nnodes_list.join(',')}"
+node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node['hadoop']['dns']['clustername']}"] = "#{nnodes_list.join(',')}"
 
 # datanodes 
 dnodes_list = []
 node['hadoop']['datanodes']['ips'].each_with_index do |ip,index|
-  dn_hostname = "#{node[:hadoop][:datanodes][:dns][:basename]}-#{index}"
-  dn_fqdn = "#{dn_hostname}.#{node[:hadoop][:dns][:clustername]}"
+  dn_hostname = "#{node['hadoop']['datanodes']['dns']['basename']}-#{index}"
+  dn_fqdn = "#{dn_hostname}.#{node['hadoop']['dns']['clustername']}"
   dnodes_list << dn_hostname
 
   # /etc/hosts entry
@@ -92,7 +92,7 @@ end
 # shared journal
 jnodes_list = []
 node['hadoop']['journalnodes']['ips'].each_with_index do |ip,index|
-  jn_fqdn = "#{node[:hadoop][:journalnodes][:dns][:basename]}-#{index}.#{node[:hadoop][:dns][:clustername]}"
+  jn_fqdn = "#{node['hadoop']['journalnodes']['dns']['basename']}-#{index}.#{node['hadoop']['dns']['clustername']}"
   jnodes_list << "#{jn_fqdn}:8485"
 
   # /etc/hosts entry
@@ -108,7 +108,7 @@ node.set['hadoop']['hdfs_site']['dfs.namenode.shared.edits.dir'] = "qjournal://#
 # zookeepers
 zks_list = []
 node['hadoop']['zk_servers']['ips'].each_with_index do |ip,index|
-  zk_fqdn = "#{node[:hadoop][:zookeepers][:dns][:basename]}-#{index}.#{node[:hadoop][:dns][:clustername]}"
+  zk_fqdn = "#{node['hadoop']['zookeepers']['dns']['basename']}-#{index}.#{node['hadoop']['dns']['clustername']}"
   zks_list << "#{zk_fqdn}:2181"
 
   # /etc/hosts entry
@@ -136,8 +136,8 @@ end
 
 unless (::File.exist? "#{node['hadoop']['hdfs_site']['dfs.ha.fencing.ssh.dir']}/id_rsa") then
   # Create znodes for SSH keys exchange
-  znode "/chef/hadoop/namenodes/#{node[:hadoop][:myid]}/ssh"
-  znode "/chef/hadoop/namenodes/#{node[:hadoop][:myid]}/ssh/pubkey"
+  znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ssh"
+  znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ssh/pubkey"
 
   # Generate keypair (net/ssh fix must be included)
   private_key = OpenSSL::PKey::RSA.new 2048
@@ -159,13 +159,13 @@ unless (::File.exist? "#{node['hadoop']['hdfs_site']['dfs.ha.fencing.ssh.dir']}/
   end
 
   # Push pubkey to zookeeper
-  znode "/chef/hadoop/namenodes/#{node[:hadoop][:myid]}/ssh/pubkey" do
+  znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ssh/pubkey" do
     action :set
     content "#{public_key}"
   end
 
   # Set SSH status to ready
-  znode "/chef/hadoop/namenodes/#{node[:hadoop][:myid]}/ssh" do
+  znode "/chef/hadoop/namenodes/#{node['hadoop']['myid']}/ssh" do
     action :set
     content "ready"
   end

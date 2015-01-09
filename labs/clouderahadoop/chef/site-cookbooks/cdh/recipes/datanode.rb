@@ -16,7 +16,7 @@ znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}"
 znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip"
 
 # Put myip to corresponding znode
-znode "/chef/hadoop/datanodes/#{node[:hadoop][:myid]}/ip" do
+znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip" do
   action :set
   content "#{node['hadoop']['myip']}"
 end
@@ -43,11 +43,11 @@ end
 #
 nns_list = []
 node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
-  nn_hostname = "#{node[:hadoop][:namenodes][:dns][:basename]}-#{index}"
-  nn_fqdn = "#{nn_hostname}.#{node[:hadoop][:dns][:clustername]}"
+  nn_hostname = "#{node['hadoop']['namenodes']['dns']['basename']}-#{index}"
+  nn_fqdn = "#{nn_hostname}.#{node['hadoop']['dns']['clustername']}"
   nns_list << nn_hostname
-  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
-  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
 
   # /etc/hosts entry
   hostsfile_entry "#{ip}" do
@@ -55,7 +55,7 @@ node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
     action :append
   end
 end
-node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node[:hadoop][:dns][:clustername]}"] = "#{nns_list.join(',')}"
+node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node['hadoop']['dns']['clustername']}"] = "#{nns_list.join(',')}"
 
 #---------------------------
 # Build hdfs-site.xml config
@@ -77,7 +77,7 @@ node.set['hadoop']['yarn_site']['yarn.resourcemanager.admin.address'] = "#{yarn_
 # 
 rmanagers_list = []
 node['hadoop']['resourcemanagers']['ips'].each_with_index do |ip,index|
-  rm_fqdn = "#{node[:hadoop][:resourcemanagers][:dns][:basename]}-#{index}.#{node[:hadoop][:dns][:clustername]}"
+  rm_fqdn = "#{node['hadoop']['resourcemanagers']['dns']['basename']}-#{index}.#{node['hadoop']['dns']['clustername']}"
   rmanagers_list << "#{rm_fqdn}:8485"
 
   # /etc/hosts entry
