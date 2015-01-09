@@ -10,8 +10,8 @@ node.override['hadoop']['myid'] = node['hadoop']['journalnodes']['ips'].include?
 
 # Creating parent znodes
 znode '/chef/hadoop/journalnodes'
-znode "/chef/hadoop/journalnodes/#{node[:hadoop][:myid]}"
-znode "/chef/hadoop/journalnodes/#{node[:hadoop][:myid]}/status"
+znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}"
+znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status"
 
 #----------------
 # Set hostname
