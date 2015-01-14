@@ -32,5 +32,14 @@ if vagrant == "yes"
 end
 
 # Create parent znodes
-znode '/chef'
-znode '/chef/hadoop'
+z = cdh_znode '/chef' do
+  action :nothing
+end
+
+z.run_action(:create)
+
+z = cdh_znode '/chef/hadoop' do
+  action :nothing
+end
+
+z.run_action(:create)

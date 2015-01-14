@@ -9,9 +9,9 @@ node.override['hadoop']['myip'] = IPFinder.find_by_interface(node, "#{node['hado
 node.override['hadoop']['myid'] = node['hadoop']['journalnodes']['ips'].include?(node['hadoop']['myip']) ? node['hadoop']['journalnodes']['ips'].index(node['hadoop']['myip']) : 0
 
 # Creating parent znodes
-znode '/chef/hadoop/journalnodes'
-znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}"
-znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status"
+cdh_znode '/chef/hadoop/journalnodes'
+cdh_znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}"
+cdh_znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status"
 
 #----------------
 # Set hostname
@@ -55,7 +55,7 @@ end
 # Updating correspongind znode
 # with 'ready' status
 
-znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status" do
+cdh_znode "/chef/hadoop/journalnodes/#{node['hadoop']['myid']}/status" do
   action :set
   content 'ready'
 end

@@ -11,12 +11,12 @@ node.set['hadoop']['myip'] = IPFinder.find_by_interface(node, "#{node['hadoop'][
 node.set['hadoop']['myid'] = node['hadoop']['datanodes']['ips'].include?(node['hadoop']['myip']) ? node['hadoop']['datanodes']['ips'].index(node['hadoop']['myip']) : 0
 
 # Create parent znodes
-znode '/chef/hadoop/datanodes'
-znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}"
-znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip"
+cdh_znode '/chef/hadoop/datanodes'
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}"
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip"
 
 # Put myip to corresponding znode
-znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip" do
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip" do
   action :set
   content "#{node['hadoop']['myip']}"
 end
