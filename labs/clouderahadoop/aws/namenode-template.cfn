@@ -1,0 +1,255 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Cloudera hadoop instances for the deployment",
+    "Parameters": {
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[-_ a-zA-Z0-9]*",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "Deployment": {
+            "Description": "Deployment in which the instances belong",
+            "Type": "String"
+        },
+        "Environment": {
+            "Description": "Environment in which the instances belong",
+            "Type": "String"
+        },
+        "VpcId": {
+            "Description": "ID of the VPC",
+            "Type": "String"
+        },
+        "AvailabilityZone": {
+            "Description": "Availability zone of the subnets",
+            "Type": "String"
+        },
+        "PrivateSubnetId": {
+            "Description": "ID of the private subnet",
+            "Type": "String"
+        },
+        "NumberOfNodes": {
+            "Description": "Number of hadoop name nodes to be deployed",
+            "Type": "String",
+            "Default": "1"
+        },
+        "InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "m1.small",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m2.4xlarge",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "cc1.4xlarge",
+                "cc2.8xlarge",
+                "cg1.4xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "AsgTopicArn": {
+            "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        },
+        "RoleName": {
+            "Description": "Name of IAM role to use with instance profile",
+            "Type": "String"
+        }
+    },
+    "Mappings": {
+        "UbuntuTrustyAmi": {
+            "us-east-1": {
+                "Ami": "ami-d0ba0cb8"
+            }
+        }
+    },
+    "Resources": {
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [ {
+                    "Ref": "RoleName"
+                } ]
+            }
+        },
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "UbuntuTrustyAmi",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "Ami"
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "PrivateSecurityGroup"
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1\n\necho BEGIN\n",
+                                "\n",
+                                "REGION=\"", { "Ref": "AWS::Region" }, "\"\n",
+                                "DEPLOYMENT=\"", { "Ref": "Deployment" }, "\"\n",
+                                "ENVIRONMENT=\"", { "Ref": "Environment" }, "\"\n",
+                                "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "\n",
+                                "WORKING_DIR=\"/deploy\"\nREPO_DIR=\"$WORKING_DIR/repo\"\nLAB_PATH=\"labs/clouderahadoop\"\nINSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)\nRUBY_URL=\"https://rvm_io.global.ssl.fastly.net/binaries/ubuntu/14.04/x86_64/ruby-2.1.5.tar.bz2\"\n\n# Update repos and install dependencies\napt-get update\napt-get -y install git-core build-essential awscli\n\n# Install rvm for the latest ruby version\ncommand curl -sSL https://rvm.io/mpapis.asc | gpg --import -\ncurl -sSL https://get.rvm.io | bash -s stable\nsource /usr/local/rvm/scripts/rvm\necho \"$RUBY_URL=1a201d082586036092cfc5b79dd26718\" >> /usr/local/rvm/user/md5\necho \"$RUBY_URL=91216074cb5f66ef5e33d47e5d3410148cc672dc73cc0d9edff92e00d20c9973bec7ab21a3462ff4e9ff9b23eff952e83b51b96a3b11cb5c23be587046eb0c57\" >> /usr/local/rvm/user/sha512\nrvm mount -r $RUBY_URL --verify-downloads 1\nrvm use 2.1 --default\nrvm rubygems current\n\n# Get latest version of jq\nwget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq\nchmod +x /usr/local/bin/jq\n\ngit clone https://git@github.com/stealthly/minotaur.git \"$REPO_DIR\"\n\n# Install Chef\ncurl -L https://www.opscode.com/chef/install.sh | bash\n\n# Install Bundler and community cookbooks with librarian\naws s3 cp --region $REGION s3://bdoss-deploy/gems/librarian-0.1.2.gem /tmp/librarian-0.1.2.gem\ngem install /tmp/librarian-0.1.2.gem --no-ri --no-rdoc\ngem install bundler --no-ri --no-rdoc\ncd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install\n\n# Find zookeeper nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nZK_SERVERS=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Find hadoop name nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=hadoop-namenode.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nHADOOP_NAMENODES=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Find hadoop journal managers that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=hadoop-journalnode.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nHADOOP_JOURNALNODES=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Find hadoop data nodes that belong to the same deployment and environment\nNODES_FILTER=\"Name=tag:Name,Values=hadoop-datanode.$DEPLOYMENT.$ENVIRONMENT\"\nQUERY=\"Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress\"\nHADOOP_DATANODES=$(aws ec2 describe-instances --region \"$REGION\" --filters \"$NODES_FILTER\" --query \"$QUERY\" | jq --raw-output 'join(\",\")')\n\n# Run Chef\nzk_servers=\"$ZK_SERVERS\" \\\nnamenodes=\"$HADOOP_NAMENODES\" \\\njournalnodes=\"$HADOOP_JOURNALNODES\" \\\ndatanodes=\"$HADOOP_DATANODES\" \\\nchef-solo -c \"$REPO_DIR/$LAB_PATH/chef/solo.rb\" -j \"$REPO_DIR/$LAB_PATH/chef/solo_namenode.json\"\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "InstanceGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "PrivateSubnetId"
+                    }
+                ],
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "DesiredCapacity": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MinSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MaxSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "AsgTopicArn"
+                    },
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "hadoop-namenode",
+                                    {
+                                        "Ref": "Deployment"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+        "PrivateSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable private access to the hadoop host, allow traffic to/from ephemeral ports and http(s) traffic",
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },                   
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WaitForInstanceWaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle",
+            "Properties": {
+            }
+        },
+        "WaitForInstance": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "InstanceGroup",
+            "Properties": {
+                "Handle": {
+                    "Ref": "WaitForInstanceWaitHandle"
+                },
+                "Timeout": "1500"
+            }
+        }
+    }
+}
