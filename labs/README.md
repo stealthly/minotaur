@@ -4,7 +4,7 @@ Each lab is a component that is deployed to an environment. If you do not have a
 
 The following labs are currently supported:
 
-- [Apache Mesos](mesosmaster/README.md)
+- [Apache Mesos](mesos/README.md)
 - [Apache Kafka](kafka/README.md)
 - [Apache Zookeeper](zookeeper/README.md)
 - [Cloudera Hadoop](clouderahadoop)
