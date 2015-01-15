@@ -15,7 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from argparse import ArgumentParser
-from ..infrastructure import Infrastructure
+
+# Dealing with relative import
+if __name__ == "__main__" and __package__ is None:
+    from os import sys, path
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+    from infrastructure import Infrastructure
+else:
+    from ..infrastructure import Infrastructure
 
 class Subnet(Infrastructure):
 	def __init__(self, environment, region, zone, public_private, cidr_block):

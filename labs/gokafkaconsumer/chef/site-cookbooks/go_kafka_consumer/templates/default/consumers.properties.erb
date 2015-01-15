@@ -1,6 +1,5 @@
 # Consumer identity
 client_id=<%= node['kafka']['consumer']['client_id'] %>
-consumer_id_pattern=<%= node['kafka']['consumer']['consumer_id_pattern'] %>
 group_id=<%= node['kafka']['consumer']['group_id'] %>
 num_consumers=<%= node['kafka']['consumer']['num_consumers'] %>
 topic=<%= node['kafka']['consumer']['topic'] %>
@@ -20,6 +19,7 @@ worker_task_timeout=<%= node['kafka']['consumer']['worker_task_timeout'] %>
 worker_managers_stop_timeout=<%= node['kafka']['consumer']['worker_managers_stop_timeout'] %>
 
 # Rebalance settings
+rebalance_barrier_timeout=<%= node['kafka']['consumer']['rebalance_barrier_timeout'] %>
 rebalance_max_retries=<%= node['kafka']['consumer']['rebalance_max_retries'] %>
 rebalance_backoff=<%= node['kafka']['consumer']['rebalance_backoff'] %>
 partition_assignment_strategy=<%= node['kafka']['consumer']['partition_assignment_strategy'] %>
@@ -37,11 +37,16 @@ socket_timeout=<%= node['kafka']['consumer']['socket_timeout'] %>
 queued_max_messages=<%= node['kafka']['consumer']['queued_max_messages'] %>
 refresh_leader_backoff=<%= node['kafka']['consumer']['refresh_leader_backoff'] %>
 steps_ahead=<%= node['kafka']['consumer']['steps_ahead'] %>
+fetch_metadata_retries=<%= node['kafka']['consumer']['fetch_metadata_retries'] %>
+fetch_metadata_backoff=<%= node['kafka']['consumer']['fetch_metadata_backoff'] %>
 
 # Offsets settings
 offsets_storage=<%= node['kafka']['consumer']['offsets_storage'] %>
 auto_offset_reset=<%= node['kafka']['consumer']['auto_offset_reset'] %>
 offsets_commit_max_retries=<%= node['kafka']['consumer']['offsets_commit_max_retries'] %>
+
+#Deployment
+deployment_timeout=<%= node['kafka']['consumer']['deployment_timeout'] %>
 
 # Metrics
 graphite_connect=<%= node['kafka']['consumer']['graphite_connect'] %>

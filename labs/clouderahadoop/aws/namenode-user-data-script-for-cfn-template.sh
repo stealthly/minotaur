@@ -27,12 +27,11 @@ echo BEGIN
 #REGION="{ "Ref": "AWS::Region" }"
 #DEPLOYMENT="{ "Ref": "Deployment" }"
 #ENVIRONMENT="{ "Ref": "Environment" }"
-#CONSUMER_URL="{ "Ref": "ConsumerUrl" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
 REPO_DIR="$WORKING_DIR/repo"
-LAB_PATH="labs/gokafkaconsumer"
+LAB_PATH="labs/clouderahadoop"
 INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 RUBY_URL="https://rvm_io.global.ssl.fastly.net/binaries/ubuntu/14.04/x86_64/ruby-2.1.5.tar.bz2"
 
@@ -70,15 +69,27 @@ NODES_FILTER="Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT"
 QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
 ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
-# Find kafka brokers
-NODES_FILTER="Name=tag:Name,Values=kafka.$DEPLOYMENT.$ENVIRONMENT"
-KAFKA_BROKERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+# Find hadoop name nodes that belong to the same deployment and environment
+NODES_FILTER="Name=tag:Name,Values=hadoop-namenode.$DEPLOYMENT.$ENVIRONMENT"
+QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
+HADOOP_NAMENODES=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+
+# Find hadoop journal managers that belong to the same deployment and environment
+NODES_FILTER="Name=tag:Name,Values=hadoop-journalnode.$DEPLOYMENT.$ENVIRONMENT"
+QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
+HADOOP_JOURNALNODES=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+
+# Find hadoop data nodes that belong to the same deployment and environment
+NODES_FILTER="Name=tag:Name,Values=hadoop-datanode.$DEPLOYMENT.$ENVIRONMENT"
+QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
+HADOOP_DATANODES=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
 # Run Chef
-consumer_url="$CONSUMER_URL" \
 zk_servers="$ZK_SERVERS" \
-kafka_brokers=$"$KAFKA_BROKERS" \
-chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo.json"
+namenodes="$HADOOP_NAMENODES" \
+journalnodes="$HADOOP_JOURNALNODES" \
+datanodes="$HADOOP_DATANODES" \
+chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_namenode.json"
 
 # Notify wait handle
 WAIT_HANDLE_JSON="{\"Status\": \"SUCCESS\", \"Reason\": \"Done\", \"UniqueId\": \"1\", \"Data\": \"$INSTANCE_ID\"}"

@@ -1,7 +1,7 @@
 Minotaur
 ========
 
-This repo constains scripts/recipes/configs to spin up VPC-based infrastructure in AWS from scratch and deploy labs to it.
+This repo contains scripts/recipes/configs to spin up VPC-based infrastructure in AWS from scratch and deploy labs to it.
 
 ###Getting started with AWS
 Before actually spinning instances up or managing infrastructure, you'll need:
@@ -16,6 +16,8 @@ Optionally you might also want to register your account on Bastion, to have SSH 
 Info about how to do it can be found in [README](infrastructure/aws/bastion).
 
 First of all, fork this repo and populate your users folder like it is told in Bastion readme. Don't forget to specify your repository url while deploying bastion.
+
+Don't forget to deploy infrastructure before starting to deploy labs, otherwise they will have no place to live in.
 
 ###CloudFormation basics
 CFN template is a JSON file that describes all the resources/relations/variables/etc for particular logical entity.
@@ -80,7 +82,7 @@ Stack updated.
 #### Deploy All Infrastructure Components
 Deploy all infrastructure components one after another. In approximately 12 minutes infrastructure will be up and running.
 ```
-root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small -c 10.0.0.8/24
+root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small -c 10.0.8.0/21
 Template successfully validated.
 Creating new 'sns-cloudformation-notifications-bdoss-dev-us-east-1' stack...
 Stack created.
@@ -94,7 +96,7 @@ Stack created.
 Notice that this will not deploy iam policies and iam user to group additions, so you must do it explicitly.
 You can easily add users to specific security group in [iam user to group additions](infrastructure/aws/iamusertogroupadditions/aws/template.cfn) cloudformation template(default user there is admin)
 
-Recommended subnet scheme is as follow: for each vpc of, for example, 10.0.0.0/21 there is 2 public 10.0.0.0/23, 10.0.0.4/23 subnets, 2 private 10.0.0.2/24, 10.0.0.6/24 subnets and 2 reserved 10.0.0.3/24, 10.0.0.7/24 subnets. So there is 3 subnets(public, private and reserved) per one availability zone.
+Recommended subnetting scheme is as follows: for each vpc of, for example, 10.0.0.0/21 there is 2 public 10.0.0.0/23, 10.0.0.4/23 subnets, 2 private 10.0.0.2/24, 10.0.0.6/24 subnets and 2 reserved 10.0.0.3/24, 10.0.0.7/24 subnets. So there is 3 subnets(public, private and reserved) per one availability zone.
 ```
 root@supervisor:/deploy# minotaur infrastructure deploy iampolicies
 Template successfully validated.

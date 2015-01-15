@@ -11,12 +11,12 @@ node.set['hadoop']['myip'] = IPFinder.find_by_interface(node, "#{node['hadoop'][
 node.set['hadoop']['myid'] = node['hadoop']['datanodes']['ips'].include?(node['hadoop']['myip']) ? node['hadoop']['datanodes']['ips'].index(node['hadoop']['myip']) : 0
 
 # Create parent znodes
-znode '/chef/hadoop/datanodes'
-znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}"
-znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip"
+cdh_znode '/chef/hadoop/datanodes'
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}"
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip"
 
 # Put myip to corresponding znode
-znode "/chef/hadoop/datanodes/#{node[:hadoop][:myid]}/ip" do
+cdh_znode "/chef/hadoop/datanodes/#{node['hadoop']['myid']}/ip" do
   action :set
   content "#{node['hadoop']['myip']}"
 end
@@ -40,14 +40,14 @@ ohai 'reload_hostname' do
   action :nothing
 end
 
-#
+# namenodes
 nns_list = []
 node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
-  nn_hostname = "#{node[:hadoop][:namenodes][:dns][:basename]}-#{index}"
-  nn_fqdn = "#{nn_hostname}.#{node[:hadoop][:dns][:clustername]}"
+  nn_hostname = "#{node['hadoop']['namenodes']['dns']['basename']}-#{index}"
+  nn_fqdn = "#{nn_hostname}.#{node['hadoop']['dns']['clustername']}"
   nns_list << nn_hostname
-  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
-  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node[:hadoop][:dns][:clustername]}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.rpc-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:8020"
+  node.set['hadoop']['hdfs_site']["dfs.namenode.http-address.#{node['hadoop']['dns']['clustername']}.#{nn_hostname}"] = "#{nn_fqdn}:50070"
 
   # /etc/hosts entry
   hostsfile_entry "#{ip}" do
@@ -55,7 +55,21 @@ node['hadoop']['namenodes']['ips'].each_with_index do |ip,index|
     action :append
   end
 end
-node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node[:hadoop][:dns][:clustername]}"] = "#{nns_list.join(',')}"
+node.set['hadoop']['hdfs_site']["dfs.ha.namenodes.#{node['hadoop']['dns']['clustername']}"] = "#{nns_list.join(',')}"
+
+# datanodes 
+dnodes_list = []
+node['hadoop']['datanodes']['ips'].each_with_index do |ip,index|
+  dn_hostname = "#{node['hadoop']['datanodes']['dns']['basename']}-#{index}"
+  dn_fqdn = "#{dn_hostname}.#{node['hadoop']['dns']['clustername']}"
+  dnodes_list << dn_hostname
+
+  # /etc/hosts entry
+  hostsfile_entry "#{ip}" do
+    hostname "#{dn_fqdn}"
+    action :append
+  end
+end
 
 #---------------------------
 # Build hdfs-site.xml config
@@ -74,10 +88,10 @@ node.set['hadoop']['yarn_site']['yarn.resourcemanager.webapp.address'] = "#{yarn
 node.set['hadoop']['yarn_site']['yarn.resourcemanager.resource-tracker.address'] = "#{yarn_hostname}:8031"
 node.set['hadoop']['yarn_site']['yarn.resourcemanager.admin.address'] = "#{yarn_hostname}:8033"
 
-# 
+# resourcemanagers
 rmanagers_list = []
 node['hadoop']['resourcemanagers']['ips'].each_with_index do |ip,index|
-  rm_fqdn = "#{node[:hadoop][:resourcemanagers][:dns][:basename]}-#{index}.#{node[:hadoop][:dns][:clustername]}"
+  rm_fqdn = "#{node['hadoop']['resourcemanagers']['dns']['basename']}-#{index}.#{node['hadoop']['dns']['clustername']}"
   rmanagers_list << "#{rm_fqdn}:8485"
 
   # /etc/hosts entry

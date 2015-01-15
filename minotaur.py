@@ -14,7 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from subprocess import call
 import os, sys
 
@@ -58,7 +58,7 @@ class Minotaur:
 		parser_all.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 		parser_all.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type of nat and bastion instances to deploy')
 		parser_all.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
-		parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', help='Subnet mask of VPC network to create')
+		parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', type=check_subnet, help='Subnet mask of VPC network to create, must be x.x.x.x/21')
 		self.args, self.unknown = parser.parse_known_args()
 		if sys.argv[2] is None:
 			print "Available commands are {0}".format(commands)
@@ -93,6 +93,11 @@ class Minotaur:
 		elif sys.argv[1] == "infrastructure":
 			inf = [name for name in os.listdir(inf_dir) if os.path.isdir(inf_dir + "/" + name)]
 			print "Available deployments are: {0}".format(inf)
+
+def check_subnet(value):
+	if value[-3:] != '/21':
+		raise ArgumentTypeError(value+' is not a valid subnet mask. Use x.x.x.x/21')
+	return value
 
 if __name__ == "__main__":
 	Minotaur().deploy()

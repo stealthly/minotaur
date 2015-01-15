@@ -22,13 +22,23 @@ import os, sys
 vpc_provider = "aws"
 template = "template.cfn"
 max_template_size = 307200
-# Get keys from docker environment
-with open("/root/.aws/config") as f:
-	for line in f.readlines():
-		if line.startswith('aws_access_key_id'):
-			aws_access_key_id = line.split()[-1]
-		elif line.startswith('aws_secret_access_key'):
-			aws_secret_access_key = line.split()[-1]
+
+# Get keys from docker environment or environment variebles
+with open("/proc/1/cgroup") as fproc:
+	if "docker" in fproc.read():
+		with open("/root/.aws/config") as f:
+			for line in f.readlines():
+				if line.startswith('aws_access_key_id'):
+					aws_access_key_id = line.split()[-1]
+				elif line.startswith('aws_secret_access_key'):
+					aws_secret_access_key = line.split()[-1]
+			if aws_access_key_id == None or aws_secret_access_key == None:
+				raise Exception("Aws keys where not found. Check your aws config file.")
+	elif "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
+		aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
+		aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
+	else:
+		raise Exception("Please setup environment variables $AWS_ACCESS_KEY_ID and $AWS_SECRET_ACCESS_KEY")
 
 class Lab(object):
 	def __init__(self, environment, deployment, region, zone, template=template):

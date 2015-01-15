@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -14,27 +12,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from argparse import ArgumentParser
 
-# Dealing with relative import
-if __name__ == "__main__" and __package__ is None:
-    from os import sys, path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from infrastructure import Infrastructure
-else:
-    from ..infrastructure import Infrastructure
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+actions :create, :set, :get, :get_children, :expect, :delete, :nothing
 
-class Iampolicies(Infrastructure):
-	def __init__(self):
-		super(Iampolicies, self).__init__(environment='', deployment='', region='us-east-1', zone='')
-		self.stack_name = "iam-policies"
+default_action :create
 
-parser = ArgumentParser(description='Deploy iam policies to an AWS CloudFormation environment.')
+attribute :znode, :name_attribute => true, :kind_of => String, :required => true
 
-def main():
-	args, unknown = parser.parse_known_args()
-	infrastructure = Iampolicies()
-	infrastructure.deploy()
+attribute :server, :kind_of => String, :default => nil
+attribute :destination, :kind_of => Hash, :default => nil
+attribute :content, :kind_of => String, :default => nil
+attribute :expect, :kind_of => String, :default => nil
 
-if __name__ == '__main__':
-	main()
+attr_accessor :exists, :z

@@ -53,14 +53,33 @@ kafka_consumers = [
 ]
 
 kafka_lab_dir = "/deploy/repo/labs/gokafkaconsumer"
+ruby_url = "https://rvm_io.global.ssl.fastly.net/binaries/ubuntu/14.04/x86_64/ruby-2.1.5.tar.bz2"
+ruby_md5 = "1a201d082586036092cfc5b79dd26718"
+ruby_sha512 = "91216074cb5f66ef5e33d47e5d3410148cc672dc73cc0d9edff92e00d20c9973bec7ab21a3462ff4e9ff9b23eff952e83b51b96a3b11cb5c23be587046eb0c57"
 
 $preinstall = <<EOF
-    if [[ ! $(git --version) ]]; then 
+    if [[ ! $(git --version) ]]; then
+        # Update repos and install dependencies
         apt-get update
-        apt-get -y install curl git-core ruby1.9.1-dev build-essential
-        gem install bundler --no-ri --no-rdoc
-        cd "#{kafka_lab_dir}/chef" && bundle install
+        apt-get -y install git-core build-essential awscli
     fi
+    if [[ ! $(rvm --version) ]]; then
+        # Install rvm for the latest ruby version
+        command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+        curl -sSL https://get.rvm.io | bash -s stable
+        source /usr/local/rvm/scripts/rvm
+        echo "#{ruby_url}=#{ruby_md5}" >> /usr/local/rvm/user/md5
+        echo "#{ruby_url}=#{ruby_sha512}" >> /usr/local/rvm/user/sha512
+        rvm mount -r #{ruby_url} --verify-downloads 1
+        rvm use 2.1 --default
+        rvm rubygems current
+        # Get latest version of jq
+        wget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq
+        chmod +x /usr/local/bin/jq
+        gem install bundler --no-ri --no-rdoc
+        gem install librarian-chef --no-ri --no-rdoc
+    fi
+    cd "#{kafka_lab_dir}/chef" && bundle install && librarian-chef install
 EOF
 
 Vagrant.configure("2") do |config|
