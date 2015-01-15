@@ -15,8 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from argparse import ArgumentParser
-from ..lab import Lab
 import sys
+
+# Dealing with relative import
+if __name__ == "__main__" and __package__ is None:
+	from os import sys, path
+	sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+	from lab import Lab
+else:
+	from ..lab import Lab
 
 class ClouderaHadoop(Lab):
 	def __init__(self, environment, deployment, region, zone, instance_count, instance_type):
