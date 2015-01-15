@@ -3,3 +3,7 @@ broker_connect=<%= node['kafka']['producer']['broker_connect'] %>
 sleep_time=<%= node['kafka']['producer']['sleep_time'] %>
 topic=<%= node['kafka']['producer']['topic'] %>
 num_partitions=<%= node['kafka']['producer']['num_partitions'] %>
+
+#Metrics
+graphite_connect=<%= node['kafka']['producer']['graphite_connect'] %>
+flush_interval=<%= node['kafka']['producer']['flush_interval'] %>
