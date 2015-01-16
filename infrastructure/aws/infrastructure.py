@@ -194,3 +194,17 @@ class Infrastructure(object):
 			if name in role['role_name']:
 				return role['role_name']
 		return None
+
+	"""
+	Create default IAM security groups if they are not created.
+	"""
+	def create_security_groups(self):
+		groups = []
+		for group in self.iam_connection.get_all_groups()['list_groups_response']['list_groups_result']['groups']:
+			groups.append(group['group_name'])
+		if 'administrators' not in groups:
+			self.iam_connection.create_group('administrators')
+			print "\"administrators\" IAM security group was created."
+		if 'trusted' not in groups:
+			self.iam_connection.create_group('trusted')
+			print "\"trusted\" IAM security group was created."

@@ -41,8 +41,12 @@ end
 
 # Include node-specific stuff
 include_recipe 'mesos::zookeeper'
-include_recipe 'mesos::marathon'
-include_recipe 'mesos::aurora'
+if 'marathon' in ENV['modules']
+  include_recipe 'mesos::marathon'
+end
+if 'aurora' in ENV['modules']
+  include_recipe 'mesos::aurora'
+end
 
 # Configure mesos with zookeeper server(s)
 template '/etc/mesos/zk' do

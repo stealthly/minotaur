@@ -1,5 +1,5 @@
 default[:mesos][:mirror] = 'http://downloads.mesosphere.io/'
-default[:mesos][:version] = '0.20.1'
+default[:mesos][:version] = '0.21.0'
 default[:mesos][:subversion] = '1.0'
 
 default[:mesos][:work_dir] = '/var/lib/mesos'
@@ -22,8 +22,8 @@ default[:mesos][:slave][:attributes][:recover] = 'reconnect'
 
 default[:mesos][:slave][:isolation_type] = 'cgroups/cpu,cgroups/mem'
 
-default[:mesos][:marathon][:version] = '0.7.0'
-default[:mesos][:marathon][:subversion] = '1.1'
+default[:mesos][:marathon][:version] = '0.7.5'
+default[:mesos][:marathon][:subversion] = '1.0'
 
 default[:mesos][:aurora][:version] = '0.6.1'
 default[:mesos][:aurora][:tarball_name] = "aurora-scheduler-#{node[:mesos][:aurora][:version]}.tar"

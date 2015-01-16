@@ -5,10 +5,10 @@ This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin 
 ## Usage
 
 ```
-usage: minotaur.py lab deploy zookeeper [-h] -e ENVIRONMENT -d DEPLOYMENT -r
-                                        REGION -z AVAILABILITY_ZONE
-                                        [-n NUM_NODES] [-i INSTANCE_TYPE]
-                                        [-v ZK_VERSION]
+usage: minotaur lab deploy zookeeper [-h] -e ENVIRONMENT -d DEPLOYMENT -r
+                                     REGION -z AVAILABILITY_ZONE
+                                     [-n NUM_NODES] [-i INSTANCE_TYPE]
+                                     [-v ZK_VERSION]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -30,13 +30,13 @@ optional arguments:
 
 **Mandatory arguments:**
 
-`<environment>` - currently we have only **bdoss-dev** environment in VPC, use it
+`<environment>` - name of the CloudFormation environment.
 
 `<deployment>` - this term/option is used to logically separate groups of nodes within environment. Nodes that belong to different deployments won't interact with each other.
 
-`<region>` - VPC is currently deployed in **us-east-1** region
+`<region>` - geographic area to deploy to.
 
-`<availability zone>` - bdoss-dev environment belongs to **us-east-1a** availability zone
+`<availability zone>` - isolated location to deploy to.
 
 **Optional arguments:**
 
@@ -48,7 +48,7 @@ optional arguments:
 
 **Example:**
 
-`./minotaur.py lab deploy zookeeper -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -n 3` - this will spin up 3 zookeeper nodes in "testing" deployment.
+`./minotaur lab deploy zookeeper -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -n 3` - this will spin up 3 zookeeper nodes in "testing" deployment.
 
 *NOTICE:* All Zookeeper nodes that belong to the same deployment will form a cluster.
 

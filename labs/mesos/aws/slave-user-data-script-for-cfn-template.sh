@@ -57,6 +57,9 @@ chmod +x /usr/local/bin/jq
 
 git clone https://git@github.com/stealthly/minotaur.git "$REPO_DIR"
 
+# Install Docker
+curl -sSL https://get.docker.com/ubuntu/ | sh
+
 # Install Chef
 curl -L https://www.opscode.com/chef/install.sh | bash
 

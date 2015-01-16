@@ -19,14 +19,14 @@ import sys
 
 # Dealing with relative import
 if __name__ == "__main__" and __package__ is None:
-    from os import sys, path
-    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from lab import Lab
+	from os import sys, path
+	sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+	from lab import Lab
 else:
-    from ..lab import Lab
+	from ..lab import Lab
 
 class Mesos(Lab):
-	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, mesos_version, zk_version, aurora_url=''):
+	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, mesos_version, zk_version, aurora_url='', marathon_version='', modules=''):
 		super(Mesos, self).__init__(environment, deployment, region, zone, template="-".join([sys.argv[4],'template.cfn']))
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
@@ -47,8 +47,11 @@ class Mesos(Lab):
 		self.parameters.append(("RoleName",         role_name))
 		if sys.argv[4] == "master":
 			public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
-			self.parameters.append(("PublicSubnetId", public_subnet_id))
-			self.parameters.append(("AuroraUrl",      aurora_url))  # Needs to be optional in CFN template
+			self.parameters.append(("PublicSubnetId",  public_subnet_id))
+			self.parameters.append(("AuroraUrl",       aurora_url))  # Needs to be optional in CFN template
+			self.parameters.append(("MarathonVersion", marathon_version))
+			self.parameters.append(("Modules",         modules))
+
 
 parser = ArgumentParser(description='Deploy Mesos Master(s) or Slave(s) to an AWS CloudFormation environment.')
 subparsers_mesos = parser.add_subparsers()
@@ -59,16 +62,20 @@ parser_master.add_argument('-r', '--region', required=True, help='Geographic are
 parser_master.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 parser_master.add_argument('-n', '--num-nodes', type=int, default=1, help='Number of instances to deploy')
 parser_master.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
-parser_master.add_argument('-m', '--mesos-version', default='0.20.1', help='The Mesos version to deploy')
+parser_master.add_argument('-m', '--mesos-version', default='0.21.0', help='The Mesos version to deploy')
 parser_master.add_argument('-v', '--zk-version', default='3.4.6', help='The Zookeeper version to deploy')
 parser_slave = subparsers_mesos.add_parser(name="slave", add_help=False, parents=[parser_master])
 parser_master.add_argument('-a', '--aurora-url', default='', help='The Aurora scheduler URL')
+parser_master.add_argument('-t', '--marathon-version', default='0.7.5', help='The Marathon version to deploy')
+parser_master.add_argument('-u', '--modules', default='marathon', choices=['marathon', 'aurora', 'marathon_aurora'], 
+						help='The module(s) to deploy. Currently supported marathon, aurora or both marathon and aurora.')
 
 def main():
 	if sys.argv[4] == "master":
 		args, unknown = parser_master.parse_known_args()
 		lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 
-			str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version, args.aurora_url)
+			str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version, 
+			args.aurora_url, args.marathon_version, args.modules)
 	elif sys.argv[4] == "slave":
 		args, unknown = parser_slave.parse_known_args()
 		lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, 

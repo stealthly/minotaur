@@ -80,7 +80,7 @@ Stack updated.
 ```
 
 #### Deploy All Infrastructure Components
-Deploy all infrastructure components one after another. In approximately 12 minutes infrastructure will be up and running.
+Deploy all infrastructure components(besides iampolicies and iamusertogroupadditions. They must be created explicitly first of all.) one after another. In approximately 12 minutes infrastructure will be up and running.
 ```
 root@supervisor:/deploy# minotaur infrastructure deploy all -e bdoss-dev -r us-east-1 -z us-east-1a -i m1.small -c 10.0.8.0/21
 Template successfully validated.
@@ -93,7 +93,22 @@ Template successfully validated.
 Creating new  'bastion-bdoss-dev-us-east-1-us-east-1a' stack...
 Stack created.
 ```
-Notice that this will not deploy iam policies and iam user to group additions, so you must do it explicitly.
+Notice that this will not deploy iam policies and iam user to group additions, so you must do it explicitly using following commands.
+
+```
+root@supervisor:/deploy# minotaur infrastructure deploy iampolicies
+Template successfully validated.
+"administrators" IAM security group was created.
+"trusted" IAM security group was created.
+Creating new 'iam-policies' stack...
+Stack created.
+```
+```
+root@supervisor:/deploy# minotaur infrastructure deploy iamusertogroupadditions
+Template successfully validated.
+Creating new 'iam-user-to-group-additions' stack...
+Stack created.
+```
 You can easily add users to specific security group in [iam user to group additions](infrastructure/aws/iamusertogroupadditions/aws/template.cfn) cloudformation template(default user there is admin)
 
 Recommended subnetting scheme is as follows: for each vpc of, for example, 10.0.0.0/21 there is 2 public 10.0.0.0/23, 10.0.0.4/23 subnets, 2 private 10.0.0.2/24, 10.0.0.6/24 subnets and 2 reserved 10.0.0.3/24, 10.0.0.7/24 subnets. So there is 3 subnets(public, private and reserved) per one availability zone.
