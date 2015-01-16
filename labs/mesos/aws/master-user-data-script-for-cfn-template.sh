@@ -28,6 +28,8 @@ echo BEGIN
 #ENVIRONMENT="{ "Ref": "Environment" }"
 #AURORA_URL="{ "Ref": "AuroraUrl" }"
 #MESOS_VERSION="{ "Ref": "MesosVersion" }"
+#MARATHON_VERSION="{ "Ref": "MarathonVersion" }"
+#MODULES="{ "Ref": "Modules" }"
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
 #PUBLIC_NETWORK_INTERFACE_ID="{ "Ref": "PublicNetworkInterface" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
@@ -58,6 +60,9 @@ chmod +x /usr/local/bin/jq
 
 git clone https://git@github.com/stealthly/minotaur.git "$REPO_DIR"
 
+# Install Docker
+curl -sSL https://get.docker.com/ubuntu/ | sh
+
 # Install Chef
 curl -L https://www.opscode.com/chef/install.sh | bash
 
@@ -81,6 +86,8 @@ fi
 
 # Run Chef
 mesos_version="$MESOS_VERSION" \
+marathon_version="$MARATHON_VERSION" \
+modules="$MODULES" \
 zk_version="$ZK_VERSION" \
 mesos_masters="$MESOS_MASTERS" \
 zk_servers="$ZK_SERVERS" \
