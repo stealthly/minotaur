@@ -5,10 +5,10 @@ This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin 
 ## Usage
 
 ```
-usage: minotaur.py lab deploy kafka [-h] -e ENVIRONMENT -d DEPLOYMENT -r
-                                    REGION -z AVAILABILITY_ZONE [-n NUM_NODES]
-                                    [-i INSTANCE_TYPE] [-v ZK_VERSION]
-                                    [-k KAFKA_URL]
+usage: minotaur lab deploy kafka [-h] -e ENVIRONMENT -d DEPLOYMENT -r
+                                 REGION -z AVAILABILITY_ZONE [-n NUM_NODES]
+                                 [-i INSTANCE_TYPE] [-v ZK_VERSION]
+                                 [-k KAFKA_URL]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -32,13 +32,13 @@ optional arguments:
 
 **Mandatory arguments:**
 
-`<environment>` - currently we have only **bdoss-dev** environment in VPC, use it
+`<environment>` - name of the CloudFormation environment.
 
 `<deployment>` - this term/option is used to logically separate groups of nodes within environment. Nodes that belong to different deployments won't interact with each other.
 
-`<region>` - VPC is currently deployed in **us-east-1** region
+`<region>` - geographic area to deploy to.
 
-`<availability zone>` - bdoss-dev environment belongs to **us-east-1a** availability zone
+`<availability zone>` - isolated location to deploy to.
 
 **Optional arguments:**
 
@@ -46,11 +46,11 @@ optional arguments:
 
 `[instances flavor]` defaults to m1.small
 
-`[source url]` defaults to https://archive.apache.org/dist/kafka/0.8.0/kafka_2.8.0-0.8.0.tar.gz
+`[source url]` defaults to https://archive.apache.org/dist/kafka/0.8.2-beta/kafka_2.11-0.8.2-beta.tar.gz
 
 **Example:**
 
-`./minotaur.py lab deploy kafka -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -k http://example.com/kafka.tar.gz -n 3 -i m1.small` - this will spin up 3 kafka-broker nodes in "testing" deployment.
+`./minotaur lab deploy kafka -e bdoss-dev -d testing -r us-east-1 -z us-east-1a -k http://example.com/kafka.tar.gz -n 3 -i m1.small` - this will spin up 3 kafka-broker nodes in "testing" deployment.
 
 *NOTICE:* If you're deploying a cluster - make sure that a separate Zookeeper node is running in the same environment and deployment.
 
