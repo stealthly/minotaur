@@ -33,7 +33,7 @@ NETWORK_INTERFACE_ID=$(echo "$DESCRIBE_INTERFACES_RESPONSE" | jq --raw-output ".
 DESCRIBE_ROUTE_TABLES_RESPONSE=$(aws ec2 describe-route-tables --filters "{\"Name\":\"route-table-id\", \"Values\":[\"$ROUTE_TABLE_ID\"]}")
 
 # Delete existing route in route table
-if [[ $DESCRIBE_ROUTE_TABLES_RESPONSE == *"0.0.0.0"* ]]
+if [[ $DESCRIBE_ROUTE_TABLES_RESPONSE == *"0.0.0.0/0"* ]]
 then aws ec2 delete-route --route-table-id $ROUTE_TABLE_ID --destination-cidr-block 0.0.0.0/0
 fi
 
