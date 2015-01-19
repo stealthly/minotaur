@@ -2,7 +2,7 @@
 #
 
 # Overriging default variables
-node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node[:mesos][:zk_servers] : ENV['zk_servers']
+node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
 
 # Include common stuff
 include_recipe 'mesos::common'
@@ -14,8 +14,8 @@ if vagrant == "yes"
 end
 
 # Manage hostname and it's resolution
-hostname = node[:mesos][:slave][:hostname]
-ip_address = IPFinder.find_by_interface(node, "#{node[:mesos][:slave][:interface]}", :private_ipv4)
+hostname = node['mesos']['slave']['hostname']
+ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['interface']}", :private_ipv4)
 
 execute "hostname #{hostname}" do
   only_if { node['hostname'] != hostname }
@@ -70,7 +70,13 @@ template '/etc/default/mesos-slave' do
   notifies :restart, "service[mesos-slave]", :delayed
 end
 
-template '/usr/local/var/mesos/deploy/mesos-slave-env.sh.template' do
+if ENV['mesos_version'] >= '0.21.0'
+  env_sh_dir = '/usr/local/etc/mesos/mesos-slave-env.sh.template'
+else
+  env_sh_dir = '/usr/local/var/mesos/deploy/mesos-slave-env.sh.template'
+end
+
+template env_sh_dir do
   source 'slave/mesos-slave-env.sh.template.erb'
   variables(
     :zk_servers => node[:mesos][:zk_server],

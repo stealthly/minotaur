@@ -2,8 +2,8 @@
 #
 
 # Overriging default variables
-node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node[:mesos][:zk_servers] : ENV['zk_servers']
-node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node[:mesos][:masters] :  ENV['mesos_masters']
+node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
+node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node['mesos']['masters'] :  ENV['mesos_masters']
 
 # Override mesos network interface if in vagrant env
 vagrant=`grep "vagrant" /etc/passwd >/dev/null && echo -n "yes" || echo -n "no"`
@@ -15,8 +15,8 @@ end
 include_recipe 'mesos::common'
 
 # Manage hostname and it's resolution
-hostname = node[:mesos][:master][:hostname]
-ip_address = IPFinder.find_by_interface(node, "#{node[:mesos][:master][:interface]}", :private_ipv4)
+hostname = node['mesos']['master']['hostname']
+ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['master']['interface']}", :private_ipv4)
 
 execute "hostname #{hostname}" do
   only_if { node['hostname'] != hostname }
@@ -41,10 +41,10 @@ end
 
 # Include node-specific stuff
 include_recipe 'mesos::zookeeper'
-if 'marathon' in ENV['modules']
+if ENV['modules'].include? 'marathon'
   include_recipe 'mesos::marathon'
 end
-if 'aurora' in ENV['modules']
+if ENV['modules'].include? 'aurora'
   include_recipe 'mesos::aurora'
 end
 

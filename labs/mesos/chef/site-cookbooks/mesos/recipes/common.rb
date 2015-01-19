@@ -25,6 +25,11 @@ end
 # from mesosphere
 case node[:platform]
 when 'ubuntu'
+  if ENV['mesos_version'] == '0.21.0'
+    apt_package "libapr1"
+    apt_package "libsvn1"
+  end
+
   remote_file "#{Chef::Config[:file_cache_path]}/mesos.deb" do
     source "#{mesos_uri}.ubuntu1404_amd64.deb"
     action :create
@@ -40,6 +45,11 @@ when 'rhel', 'centos', 'amazon'
   # Amazon Linux has jdk 6 installed by default
   yum_package 'jdk' do
     action :purge
+  end
+
+  if ENV['mesos_version'] == '0.21.0'
+    yum_package "libapr1"
+    yum_package "libsvn1"
   end
 
   execute 'update java alternatives' do
