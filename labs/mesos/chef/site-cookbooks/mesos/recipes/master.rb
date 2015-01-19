@@ -41,10 +41,10 @@ end
 
 # Include node-specific stuff
 include_recipe 'mesos::zookeeper'
-if 'marathon' in ENV['modules']
+if ENV['modules'].include? 'marathon'
   include_recipe 'mesos::marathon'
 end
-if 'aurora' in ENV['modules']
+if ENV['modules'].include? 'aurora'
   include_recipe 'mesos::aurora'
 end
 
