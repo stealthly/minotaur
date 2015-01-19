@@ -19,6 +19,7 @@ default[:mesos][:slave][:hostname] = 'mesos-slave'
 default[:mesos][:slave][:attributes][:checkpoint] = 'true'
 default[:mesos][:slave][:attributes][:strict] = 'false'
 default[:mesos][:slave][:attributes][:recover] = 'reconnect'
+default[:mesos][:slave][:attributes][:containerizers] = 'mesos,docker'
 
 default[:mesos][:slave][:isolation_type] = 'cgroups/cpu,cgroups/mem'
 
