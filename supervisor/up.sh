@@ -17,8 +17,15 @@
 
 CONTAINER_NAME="supervisor"
 
+# Handle container start on ssh in Vagrant
+SUPERVISOR_PATH="."
+if [[ $(whoami) = "vagrant" ]]; then
+SUPERVISOR_PATH="/deploy/supervisor"
+cd $SUPERVISOR_PATH
+fi
+
 echo "Building ..."
-docker build -t $CONTAINER_NAME .
+docker build -t $CONTAINER_NAME $SUPERVISOR_PATH
 
 echo "Spawning ..."
 docker run -e "USER"=$1 --dns="127.0.0.1" --dns-search="aws" --name $CONTAINER_NAME -h supervisor -i -t -v $(pwd)/../:/deploy:ro supervisor /sbin/my_init -- bash -l

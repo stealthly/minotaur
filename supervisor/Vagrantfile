@@ -18,17 +18,14 @@
 
 $dockerize = <<EOF
     apt-get update
-    apt-get install -y docker.io
-    ln -sf /usr/bin/docker.io /usr/local/bin/docker
-    sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io
-    source /etc/bash_completion.d/docker.io
+    # Install Docker
+    curl -sSL https://get.docker.com/ubuntu/ | sh
+    ln -sf /usr/bin/docker /usr/local/bin/docker
+    sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
+    source /etc/bash_completion.d/docker
     chmod 777 /var/run/docker.sock
-
-    echo -e "\n#Dockerize\nbash /deploy/supervisor/up.sh" >> ~/.bash_rc
     # Magic
-    #echo -e '#!/bin/bash\nbash /deploy/supervisor/up.sh' > /usr/local/bin/supervisor
-    #chmod +x /usr/local/bin/supervisor
-    #chsh -s /usr/local/bin/supervisor vagrant
+    chsh -s /deploy/supervisor/up.sh vagrant
 EOF
 
 Vagrant.configure("2") do |config|
