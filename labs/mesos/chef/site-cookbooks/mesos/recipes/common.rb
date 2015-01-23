@@ -21,6 +21,19 @@ chef_gem "ipaddr_extensions" do
   version '1.0.0'
 end
 
+# Create working directory
+directory node[:mesos][:work_dir] do
+  owner 'root'
+  group 'root'
+  mode '0644'
+  action :create
+end
+
+# Mounting volume
+if node.block_device.has_key?('xvdc')
+  include_recipe 'mesos::mount-volume'
+end
+
 # Plarform-specific installation of packages
 # from mesosphere
 case node[:platform]
