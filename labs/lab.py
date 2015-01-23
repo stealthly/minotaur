@@ -23,30 +23,13 @@ vpc_provider = "aws"
 template = "template.cfn"
 max_template_size = 307200
 
-# Get keys from docker environment or environment variebles
-with open("/proc/1/cgroup") as fproc:
-	if "docker" in fproc.read():
-		with open("/root/.aws/config") as f:
-			for line in f.readlines():
-				if line.startswith('aws_access_key_id'):
-					aws_access_key_id = line.split()[-1]
-				elif line.startswith('aws_secret_access_key'):
-					aws_secret_access_key = line.split()[-1]
-			if aws_access_key_id == None or aws_secret_access_key == None:
-				raise Exception("Aws keys where not found. Check your aws config file.")
-	elif "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
-		aws_access_key_id = os.environ["AWS_ACCESS_KEY_ID"]
-		aws_secret_access_key = os.environ["AWS_SECRET_ACCESS_KEY"]
-	else:
-		raise Exception("Please setup environment variables $AWS_ACCESS_KEY_ID and $AWS_SECRET_ACCESS_KEY")
-
 class Lab(object):
 	def __init__(self, environment, deployment, region, zone, template=template):
 		# Create connections to AWS components
-		self.cfn_connection = cfn.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-		self.sns_connection = sns.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-		self.vpc_connection = vpc.connect_to_region(region, aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-		self.iam_connection = iam.connect_to_region("universal", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
+		self.cfn_connection = cfn.connect_to_region(region)
+		self.sns_connection = sns.connect_to_region(region)
+		self.vpc_connection = vpc.connect_to_region(region)
+		self.iam_connection = iam.connect_to_region("universal")
 
 		# Temporary python class -> directory name hack
 		self.lab_dir = self.__class__.__name__.lower()
@@ -119,6 +102,7 @@ class Lab(object):
 		for topic in self.sns_connection.get_all_topics()['ListTopicsResponse']['ListTopicsResult']['Topics']:
 			if topic_name in topic['TopicArn']:
 				return topic['TopicArn']
+		print "SNS topic \"{0}\" not found. Is SNS topic \"{0}\" deployed?".format(topic_name)
 		return None
 
 	"""
@@ -131,6 +115,7 @@ class Lab(object):
 					return vpc
 			except KeyError:
 				continue
+		print "VPC \"{0}\" not found. Is VPC \"{0}\" deployed?".format(vpc_name)
 		return None
 
 	"""
@@ -143,6 +128,7 @@ class Lab(object):
 					return subnet
 			except KeyError:
 				continue
+		print "Subnet \"{0}\" not found. Is subnet \"{0}\" deployed?".format(subnet_name)
 		return None
 
 	"""

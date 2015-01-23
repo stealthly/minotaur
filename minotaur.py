@@ -17,6 +17,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from subprocess import call
 import os, sys
+from boto import config
 
 # Importing infrastructure modules
 inf_dir = os.path.dirname(os.path.realpath(__file__)) + "/infrastructure/aws"
@@ -50,8 +51,10 @@ class Minotaur:
 		subparsers_lab_deploy = parser_lab_deploy.add_subparsers()
 		for module in infrastructure_list:
 			exec("parser_{0} = subparsers_infrastructure_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
+			exec("parser_{0}.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')".format(module))
 		for module in lab_list:
 			exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
+			exec("parser_{0}.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')".format(module))
 		parser_all = subparsers_infrastructure_deploy.add_parser(name="all")
 		parser_all.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 		parser_all.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
@@ -63,6 +66,10 @@ class Minotaur:
 		if sys.argv[2] is None:
 			print "Available commands are {0}".format(commands)
 			exit(1)
+		if self.args.debug == True:
+			if not config.has_section('Boto'):
+				config.add_section('Boto')
+			config.set('Boto', 'debug', '2')
 
 	def deploy(self):
 		# LIST
