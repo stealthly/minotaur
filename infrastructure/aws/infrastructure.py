@@ -125,6 +125,7 @@ class Infrastructure(object):
 		for topic in self.sns_connection.get_all_topics()['ListTopicsResponse']['ListTopicsResult']['Topics']:
 			if topic_name in topic['TopicArn']:
 				return topic['TopicArn']
+		print "SNS topic \"{0}\" not found. Is SNS topic \"{0}\" deployed?".format(topic_name)
 		return None
 
 	"""
@@ -137,6 +138,7 @@ class Infrastructure(object):
 					return vpc
 			except KeyError:
 				continue
+		print "VPC \"{0}\" not found. Is VPC \"{0}\" deployed?".format(vpc_name)
 		return None
 
 	"""
@@ -149,6 +151,7 @@ class Infrastructure(object):
 					return subnet
 			except KeyError:
 				continue
+		print "Subnet \"{0}\" not found. Is subnet \"{0}\" deployed?".format(subnet_name)
 		return None
 
 	"""
