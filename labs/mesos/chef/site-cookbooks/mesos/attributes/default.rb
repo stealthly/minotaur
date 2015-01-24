@@ -2,7 +2,7 @@ default[:mesos][:mirror] = 'http://downloads.mesosphere.io/'
 default[:mesos][:version] = '0.21.0'
 default[:mesos][:subversion] = '1.0'
 
-default[:mesos][:work_dir] = '/var/lib/mesos'
+default[:mesos][:work_dir] = '/mnt/mesos'
 default[:mesos][:log_dir] = '/var/log/mesos'
 
 default[:mesos][:masters] = nil
@@ -20,6 +20,10 @@ default[:mesos][:slave][:attributes][:checkpoint] = 'true'
 default[:mesos][:slave][:attributes][:strict] = 'false'
 default[:mesos][:slave][:attributes][:recover] = 'reconnect'
 default[:mesos][:slave][:attributes][:containerizers] = 'mesos,docker'
+
+default[:mesos][:mount_point] = '/mnt/mesos'
+default[:mesos][:volume_label] = 'mesos-fs'
+default[:mesos][:device_id] = '/dev/xvdc'
 
 default[:mesos][:slave][:isolation_type] = 'cgroups/cpu,cgroups/mem'
 

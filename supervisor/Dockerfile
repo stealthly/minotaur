@@ -39,6 +39,8 @@ RUN chmod +x /usr/local/bin/jq
 # Configuring aws-cli
 RUN mkdir -p /root/.aws
 COPY config/aws_config /root/.aws/config
+COPY config/aws_config /root/.boto
+RUN sed -i 's/default/Credentials/' /root/.boto
 
 # Checking config
 RUN AWS_ACCESS_KEY=$(grep aws_access_key_id /root/.aws/config | awk -F= '{print $2}') && \
