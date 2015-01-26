@@ -27,12 +27,19 @@ else:
 
 class ClouderaHadoop(Lab):
 	def __init__(self, environment, deployment, region, zone, instance_count, instance_type):
-		super(ClouderaHadoop, self).__init__(environment, deployment, region, zone, template="-".join([sys.argv[4],'template.cfn']))
+		super(ClouderaHadoop, self).__init__(environment, deployment, region, zone,
+                                             template="-".join([sys.argv[4],'template.cfn']))
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
 		role_name = self.get_role_name("GenericDev")
 		self.stack_name = "-".join([self.lab_dir, sys.argv[4], environment, deployment, region, zone])
+		# m1, c1, m2 instances need old paravirtualized ami. New instances need hvm enabled ami.
+		if instance_type in ["m1.small", "m1.medium", "m1.large", "m1.xlarge", "c1.medium",
+							 "c1.large", "m2.xlarge", "m2.2xlarge","m2.4xlarge"]:
+			virtualization = "paravirt"
+		else:
+			virtualization = "hvm"
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Environment",      environment))
 		self.parameters.append(("Deployment",       deployment))
@@ -43,10 +50,12 @@ class ClouderaHadoop(Lab):
 		self.parameters.append(("PrivateSubnetId",  private_subnet_id))
 		self.parameters.append(("AsgTopicArn",      topic_arn))
 		self.parameters.append(("RoleName",         role_name))
+		self.parameters.append(("Virtualization",   virtualization))
 
 parser = ArgumentParser(description='Deploy Clouder Hadoop node(s) to an AWS CloudFormation environment.')
 subparsers_hadoop = parser.add_subparsers()
 parser_namenode = subparsers_hadoop.add_parser(name="namenode", add_help=True)
+parser_namenode.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
 parser_namenode.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 parser_namenode.add_argument('-d', '--deployment', required=True, help='Unique name for the deployment')
 parser_namenode.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')

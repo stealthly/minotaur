@@ -40,7 +40,6 @@
             "Type": "String",
             "Default": "m1.small",
             "AllowedValues": [
-                "t1.micro",
                 "m1.small",
                 "m1.medium",
                 "m1.large",
@@ -72,12 +71,17 @@
         "RoleName": {
             "Description": "Name of IAM role to use with instance profile",
             "Type": "String"
+        },
+        "Virtualization": {
+            "Description": "Virtualization type(hvm or paravirt) of image to be deployed",
+            "Type": "String"
         }
     },
     "Mappings": {
         "UbuntuTrustyAmi": {
             "us-east-1": {
-                "Ami": "ami-d0ba0cb8"
+                "hvm": "ami-cc5229a4",
+                "paravirt": "ami-d0ba0cb8"
             }
         }
     },
@@ -106,7 +110,9 @@
                         {
                             "Ref": "AWS::Region"
                         },
-                        "Ami"
+                        {
+                            "Ref": "Virtualization"
+                        }
                     ]
                 },
                 "SecurityGroups": [

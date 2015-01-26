@@ -25,12 +25,19 @@ else:
     from ..lab import Lab
 
 class Kafka(Lab):
-	def __init__(self, environment, deployment, region, zone, instance_count, instance_type, zk_version, kafka_url):
+	def __init__(self, environment, deployment, region, zone, instance_count,
+				 instance_type, zk_version, kafka_url):
 		super(Kafka, self).__init__(environment, deployment, region, zone)
 		vpc_id = self.get_vpc(environment).id
 		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
 		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
 		role_name = self.get_role_name("GenericDev")
+		# m1, c1, m2 instances need old paravirtualized ami. New instances need hvm enabled ami.
+		if instance_type in ["m1.small", "m1.medium", "m1.large", "m1.xlarge", "c1.medium",
+							 "c1.large", "m2.xlarge", "m2.2xlarge","m2.4xlarge"]:
+			virtualization = "paravirt"
+		else:
+			virtualization = "hvm"
 		self.parameters.append(("KeyName",          environment))
 		self.parameters.append(("Environment",      environment))
 		self.parameters.append(("Deployment",       deployment))
@@ -43,8 +50,10 @@ class Kafka(Lab):
 		self.parameters.append(("PrivateSubnetId",  private_subnet_id))
 		self.parameters.append(("AsgTopicArn",      topic_arn))
 		self.parameters.append(("RoleName",         role_name))
+		self.parameters.append(("Virtualization",   virtualization))
 
 parser = ArgumentParser(description='Deploy Kafka Broker(s) to an AWS CloudFormation environment.')
+parser.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
 parser.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 parser.add_argument('-d', '--deployment', required=True, help='Unique name for the deployment')
 parser.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')

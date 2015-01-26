@@ -51,26 +51,23 @@ class Minotaur:
 		subparsers_lab_deploy = parser_lab_deploy.add_subparsers()
 		for module in infrastructure_list:
 			exec("parser_{0} = subparsers_infrastructure_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
-			exec("parser_{0}.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')".format(module))
 		for module in lab_list:
 			exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
-			exec("parser_{0}.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')".format(module))
 		parser_all = subparsers_infrastructure_deploy.add_parser(name="all")
+		parser_all.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
 		parser_all.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 		parser_all.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 		parser_all.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 		parser_all.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type of nat and bastion instances to deploy')
 		parser_all.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
-		parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', type=check_subnet, help='Subnet mask of VPC network to create, must be x.x.x.x/21')
-		parser_all.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
+		parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', type=check_subnet,
+								help='Subnet mask of VPC network to create, must be x.x.x.x/21')
 		self.args, self.unknown = parser.parse_known_args()
 		if sys.argv[2] is None:
 			print "Available commands are {0}".format(commands)
 			exit(1)
 		if "debug" in self.args.__dict__ and self.args.debug == True:
-			if not config.has_section('Boto'):
-				config.add_section('Boto')
-			config.set('Boto', 'debug', '2')
+			enable_debug()
 
 	def deploy(self):
 		# LIST
@@ -80,14 +77,19 @@ class Minotaur:
 		elif sys.argv[2] == commands[1] and sys.argv[1] == "infrastructure":
 			if sys.argv[3] == "all":
 				ip, mask = self.args.cidr_block.split('/')
-				public_ip = '.'.join([ip.split('.')[0], ip.split('.')[1], str(int(ip.split('.')[2])+2), ip.split('.')[3]])
+				public_ip = '.'.join([ip.split('.')[0], ip.split('.')[1], str(int(ip.split('.')[2])+2),
+									  ip.split('.')[3]])
 				sns.Sns(self.args.environment, self.args.region, "cloudformation-notifications").deploy()
 				sns.Sns(self.args.environment, self.args.region, "autoscaling-notifications").deploy()
 				vpc.Vpc(self.args.environment, self.args.region, self.args.cidr_block).deploy()
-				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "private", '/'.join([ip, str(int(mask)+2)])).deploy()
-				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone, "public", '/'.join([public_ip, str(int(mask)+3)])).deploy()
-				nat.Nat(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type).deploy()
-				bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone, self.args.instance_type, self.args.repo_url).deploy()
+				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone,
+							  "private", '/'.join([ip, str(int(mask)+2)])).deploy()
+				subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone,
+							  "public", '/'.join([public_ip, str(int(mask)+3)])).deploy()
+				nat.Nat(self.args.environment, self.args.region, self.args.availability_zone,
+						self.args.instance_type).deploy()
+				bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone,
+								self.args.instance_type, self.args.repo_url).deploy()
 			elif sys.argv[3] in infrastructure_list:
 				exec("{0}.main()".format(sys.argv[3]))
 		elif sys.argv[2] == commands[1] and sys.argv[1] == "lab":
@@ -101,6 +103,11 @@ class Minotaur:
 		elif sys.argv[1] == "infrastructure":
 			inf = [name for name in os.listdir(inf_dir) if os.path.isdir(inf_dir + "/" + name)]
 			print "Available deployments are: {0}".format(inf)
+
+def enable_debug():
+	if not config.has_section('Boto'):
+		config.add_section('Boto')
+	config.set('Boto', 'debug', '2')
 
 def check_subnet(value):
 	if value[-3:] != '/21':
