@@ -35,10 +35,10 @@ parser.add_argument('-e', '--environment', required=True, help='CloudFormation e
 parser.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 parser.add_argument('-t', '--topic-name', required=True, help='Name of the SNS topic to be created')
 
-def main():
+def main(parser):
 	args, unknown = parser.parse_known_args()
 	infrastructure = Sns(args.environment, args.region, args.topic_name)
 	infrastructure.deploy()
 
 if __name__ == '__main__':
-	main()
+	main(parser)

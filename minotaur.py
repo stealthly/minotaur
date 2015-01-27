@@ -16,45 +16,45 @@
 # limitations under the License.
 from argparse import ArgumentParser, ArgumentTypeError
 from subprocess import call
-import os, sys
+import os
 from boto import config
 from labs.lab import enable_debug
 
 # Importing infrastructure modules
-inf_dir = os.path.dirname(os.path.realpath(__file__)) + "/infrastructure/aws"
+inf_dir = os.path.dirname(os.path.realpath(__file__)) + '/infrastructure/aws'
 infrastructure_list = [i for i in os.listdir(inf_dir) if os.path.exists(inf_dir+'/'+i+'/'+i+'.py')]
 for module in infrastructure_list:
-    exec("from infrastructure.aws.{0} import {0}".format(module))
+    exec('from infrastructure.aws.{0} import {0}'.format(module))
 
 # Importing lab modules
-lab_dir = os.path.dirname(os.path.realpath(__file__)) + "/labs"
+lab_dir = os.path.dirname(os.path.realpath(__file__)) + '/labs'
 lab_list = [i for i in os.listdir(lab_dir) if os.path.exists(lab_dir+'/'+i+'/'+i+'.py')]
 for module in lab_list:
-    exec("from labs.{0} import {0}".format(module))
+    exec('from labs.{0} import {0}'.format(module))
 
-commands = ["list", "deploy"]
-deploy_usage = """usage: minotaur deploy <deployment> [flags...]
-"""
+deploy_usage = '''usage: minotaur deploy <deployment> [flags...]
+'''
+
 
 class Minotaur:
     def __init__(self):
-        parser = ArgumentParser(description="Deploy VPC-based infrastructure and labs based on this infrastructure in AWS")
-        subparsers = parser.add_subparsers()
-        parser_infrastructure = subparsers.add_parser(name="infrastructure")
-        parser_lab = subparsers.add_parser(name="lab")
-        subparsers_infrastructure = parser_infrastructure.add_subparsers()
-        parser_infrastructure_deploy = subparsers_infrastructure.add_parser(name="deploy")
-        parser_infrastructure_list = subparsers_infrastructure.add_parser(name="list")
-        subparsers_lab = parser_lab.add_subparsers()
-        parser_lab_deploy = subparsers_lab.add_parser(name="deploy")
-        parser_lab_list = subparsers_lab.add_parser(name="list")
-        subparsers_infrastructure_deploy = parser_infrastructure_deploy.add_subparsers()
-        subparsers_lab_deploy = parser_lab_deploy.add_subparsers()
+        self.parser = ArgumentParser(description='Deploy VPC-based infrastructure and labs based on this infrastructure in AWS')
+        subparsers = self.parser.add_subparsers()
+        parser_infrastructure = subparsers.add_parser(name='infrastructure')
+        parser_lab = subparsers.add_parser(name='lab')
+        subparsers_infrastructure = parser_infrastructure.add_subparsers(dest='infrastructure')
+        parser_infrastructure_deploy = subparsers_infrastructure.add_parser(name='deploy')
+        parser_infrastructure_list = subparsers_infrastructure.add_parser(name='list')
+        subparsers_lab = parser_lab.add_subparsers(dest='lab')
+        parser_lab_deploy = subparsers_lab.add_parser(name='deploy')
+        parser_lab_list = subparsers_lab.add_parser(name='list')
+        subparsers_infrastructure_deploy = parser_infrastructure_deploy.add_subparsers(dest='deploy')
+        subparsers_lab_deploy = parser_lab_deploy.add_subparsers(dest='deploy')
         for module in infrastructure_list:
-            exec("parser_{0} = subparsers_infrastructure_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
+            exec('parser_{0} = subparsers_infrastructure_deploy.add_parser(name=\'{0}\', add_help=False, parents=[{0}.parser])'.format(module))
         for module in lab_list:
-            exec("parser_{0} = subparsers_lab_deploy.add_parser(name='{0}', add_help=False, parents=[{0}.parser])".format(module))
-        parser_all = subparsers_infrastructure_deploy.add_parser(name="all")
+            exec('parser_{0} = subparsers_lab_deploy.add_parser(name=\'{0}\', add_help=False, parents=[{0}.parser])'.format(module))
+        parser_all = subparsers_infrastructure_deploy.add_parser(name='all')
         parser_all.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
         parser_all.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
         parser_all.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
@@ -63,57 +63,47 @@ class Minotaur:
         parser_all.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
         parser_all.add_argument('-c', '--cidr-block', default='10.0.0.0/21', type=check_subnet,
                                 help='Subnet mask of VPC network to create, must be x.x.x.x/21')
-        self.args, self.unknown = parser.parse_known_args()
-        if sys.argv[2] is None:
-            print "Available commands are {0}".format(commands)
-            exit(1)
+        self.args, self.unknown = self.parser.parse_known_args()
 
     def deploy(self):
         # LIST
-        if sys.argv[2] == commands[0]:
-            self.print_labs()
+        self.print_labs()
         # DEPLOY
-        elif sys.argv[2] == commands[1] and sys.argv[1] == "infrastructure":
-            if sys.argv[3] == "all":
-                if "debug" in self.args.__dict__ and self.args.debug == True:
-                    enable_debug()
+        if 'infrastructure' in self.args.__dict__ and self.args.infrastructure == 'deploy':
+            if self.args.deploy == 'all':
+                enable_debug(self.args)
                 ip, mask = self.args.cidr_block.split('/')
                 public_ip = '.'.join([ip.split('.')[0], ip.split('.')[1], str(int(ip.split('.')[2])+2),
                                       ip.split('.')[3]])
-                sns.Sns(self.args.environment, self.args.region, "cloudformation-notifications").deploy()
-                sns.Sns(self.args.environment, self.args.region, "autoscaling-notifications").deploy()
+                sns.Sns(self.args.environment, self.args.region, 'cloudformation-notifications').deploy()
+                sns.Sns(self.args.environment, self.args.region, 'autoscaling-notifications').deploy()
                 vpc.Vpc(self.args.environment, self.args.region, self.args.cidr_block).deploy()
                 subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone,
-                              "private", '/'.join([ip, str(int(mask)+2)])).deploy()
+                              'private', '/'.join([ip, str(int(mask)+2)])).deploy()
                 subnet.Subnet(self.args.environment, self.args.region, self.args.availability_zone,
-                              "public", '/'.join([public_ip, str(int(mask)+3)])).deploy()
+                              'public', '/'.join([public_ip, str(int(mask)+3)])).deploy()
                 nat.Nat(self.args.environment, self.args.region, self.args.availability_zone,
                         self.args.instance_type).deploy()
                 bastion.Bastion(self.args.environment, self.args.region, self.args.availability_zone,
                                 self.args.instance_type, self.args.repo_url).deploy()
-            elif sys.argv[3] in infrastructure_list:
-                exec("{0}.main()".format(sys.argv[3]))
-        elif sys.argv[2] == commands[1] and sys.argv[1] == "lab":
-            if sys.argv[3] in lab_list:
-                exec("{0}.main()".format(sys.argv[3]))
+            elif self.args.deploy in infrastructure_list:
+                exec('{0}.main(self.parser)'.format(self.args.deploy))
+        elif 'lab' in self.args.__dict__ and self.args.lab == 'deploy':
+            if self.args.deploy in lab_list:
+                exec('{0}.main(self.parser)'.format(self.args.deploy))
 
     def print_labs(self):
-        if sys.argv[1] == "lab":
-            labs = [name for name in os.listdir(lab_dir) if os.path.isdir(lab_dir + "/" + name)]
-            print "Available deployments are: {0}".format(labs)
-        elif sys.argv[1] == "infrastructure":
-            inf = [name for name in os.listdir(inf_dir) if os.path.isdir(inf_dir + "/" + name)]
-            print "Available deployments are: {0}".format(inf)
-
-def enable_debug():
-    if not config.has_section('Boto'):
-        config.add_section('Boto')
-    config.set('Boto', 'debug', '2')
+        if 'lab' in self.args.__dict__ and self.args.lab == 'list':
+            labs = [name for name in os.listdir(lab_dir) if os.path.isdir(lab_dir + '/' + name)]
+            print 'Available deployments are: {0}'.format(labs)
+        elif 'infrastructure' in self.args.__dict__ and self.args.infrastructure == 'list':
+            inf = [name for name in os.listdir(inf_dir) if os.path.isdir(inf_dir + '/' + name)]
+            print 'Available deployments are: {0}'.format(inf)
 
 def check_subnet(value):
     if value[-3:] != '/21':
         raise ArgumentTypeError(value+' is not a valid subnet mask. Use x.x.x.x/21')
     return value
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     Minotaur().deploy()

@@ -51,11 +51,11 @@ parser.add_argument('-z', '--availability-zone', required=True, help='Isolated l
 parser.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
 parser.add_argument('-u', '--repo-url', default='https://git@github.com/stealthly/minotaur.git', help='Public repository url where user info is stored')
 
-def main():
+def main(parser):
     args, unknown = parser.parse_known_args()
     enable_debug(args)
     infrastructure = Bastion(args.environment, args.region, args.availability_zone, args.instance_type, args.repo_url)
     infrastructure.deploy()
 
 if __name__ == '__main__':
-    main()
+    main(parser)

@@ -61,7 +61,7 @@ parser.add_argument('-n', '--num-nodes', type=int, default=1, help='Number of in
 parser.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
 parser.add_argument('-c', '--producer-url', default='', help='The Kafka Producer URL')
 
-def main():
+def main(parser):
     args, unknown = parser.parse_known_args()
     enable_debug(args)
     lab = GoKafkaProducer(args.environment, args.deployment, args.region, args.availability_zone, 
@@ -69,4 +69,4 @@ def main():
     lab.deploy()
 
 if __name__ == '__main__':
-    main()
+    main(parser)

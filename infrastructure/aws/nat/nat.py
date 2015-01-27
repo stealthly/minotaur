@@ -50,11 +50,11 @@ parser.add_argument('-r', '--region', required=True, help='Geographic area to de
 parser.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 parser.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
 
-def main():
+def main(parser):
     args, unknown = parser.parse_known_args()
     enable_debug(args)
     infrastructure = Nat(args.environment, args.region, args.availability_zone, args.instance_type)
     infrastructure.deploy()
 
 if __name__ == '__main__':
-    main()
+    main(parser)

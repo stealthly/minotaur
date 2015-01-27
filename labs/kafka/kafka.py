@@ -63,7 +63,7 @@ parser.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 i
 parser.add_argument('-v', '--zk-version', default='3.4.6', help='The Zookeeper version to deploy')
 parser.add_argument('-k', '--kafka-url', default='', help='The Kafka URL')
 
-def main():
+def main(parser):
     args, unknown = parser.parse_known_args()
     enable_debug(args)
     lab = Kafka(args.environment, args.deployment, args.region, args.availability_zone, 
@@ -71,4 +71,4 @@ def main():
     lab.deploy()
 
 if __name__ == '__main__':
-    main()
+    main(parser)

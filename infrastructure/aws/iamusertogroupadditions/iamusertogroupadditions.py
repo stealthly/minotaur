@@ -31,10 +31,10 @@ class Iamusertogroupadditions(Infrastructure):
 
 parser = ArgumentParser(description='Deploy iam user to group additions to an AWS CloudFormation environment.')
 
-def main():
+def main(parser):
 	args, unknown = parser.parse_known_args()
 	infrastructure = Iamusertogroupadditions()
 	infrastructure.deploy()
 
 if __name__ == '__main__':
-	main()
+	main(parser)

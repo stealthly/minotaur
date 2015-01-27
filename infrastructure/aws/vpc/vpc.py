@@ -36,10 +36,10 @@ parser.add_argument('-e', '--environment', required=True, help='CloudFormation e
 parser.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
 parser.add_argument('-c', '--cidr-block', required=True, help='Subnet mask of VPC network to create')
 
-def main():
+def main(parser):
 	args, unknown = parser.parse_known_args()
 	infrastructure = Vpc(args.environment, args.region, str(args.cidr_block))
 	infrastructure.deploy()
 
 if __name__ == '__main__':
-	main()
+	main(parser)
