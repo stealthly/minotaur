@@ -20,9 +20,9 @@ from argparse import ArgumentParser
 if __name__ == "__main__" and __package__ is None:
     from os import sys, path
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from lab import Lab
+    from lab import Lab, enable_debug
 else:
-    from ..lab import Lab
+    from ..lab import Lab, enable_debug
 
 class GoKafkaConsumer(Lab):
     def __init__(self, environment, deployment, region, zone,
@@ -63,6 +63,7 @@ parser.add_argument('-c', '--consumer-url', default='', help='The Kafka Consumer
 
 def main():
     args, unknown = parser.parse_known_args()
+    enable_debug(args)
     lab = GoKafkaConsumer(args.environment, args.deployment, args.region, args.availability_zone, 
         str(args.num_nodes), args.instance_type, args.consumer_url)
     lab.deploy()

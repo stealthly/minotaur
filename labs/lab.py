@@ -16,7 +16,7 @@
 # limitations under the License.
 from boto import cloudformation as cfn, sns, vpc
 from boto.exception import BotoServerError
-from boto import iam
+from boto import iam, config
 import os, sys
 
 vpc_provider = "aws"
@@ -24,118 +24,127 @@ template = "template.cfn"
 max_template_size = 307200
 
 class Lab(object):
-	def __init__(self, environment, deployment, region, zone, template=template):
-		# Create connections to AWS components
-		self.cfn_connection = cfn.connect_to_region(region)
-		self.sns_connection = sns.connect_to_region(region)
-		self.vpc_connection = vpc.connect_to_region(region)
-		self.iam_connection = iam.connect_to_region("universal")
+    def __init__(self, environment, deployment, region, zone, template=template):
+        # Create connections to AWS components
+        self.cfn_connection = cfn.connect_to_region(region)
+        self.sns_connection = sns.connect_to_region(region)
+        self.vpc_connection = vpc.connect_to_region(region)
+        self.iam_connection = iam.connect_to_region("universal")
 
-		# Temporary python class -> directory name hack
-		self.lab_dir = self.__class__.__name__.lower()
+        # Temporary python class -> directory name hack
+        self.lab_dir = self.__class__.__name__.lower()
 
-		self.stack_name = "-".join([self.lab_dir, environment, deployment, region, zone])
-		self.notification_arns = self.get_sns_topic("cloudformation-notifications-" + environment)
-		self.parameters = []
+        self.stack_name = "-".join([self.lab_dir, environment, deployment, region, zone])
+        self.notification_arns = self.get_sns_topic("cloudformation-notifications-" + environment)
+        self.parameters = []
 
-		# Prepare the CFN template
-		self.template_url = "/".join([os.path.dirname(os.path.realpath(__file__)), self.lab_dir, vpc_provider, template])
-		self.template_body = self.read_file(self.template_url, max_template_size)
-		self.validate_template()
+        # Prepare the CFN template
+        self.template_url = "/".join([os.path.dirname(os.path.realpath(__file__)), self.lab_dir, vpc_provider, template])
+        self.template_body = self.read_file(self.template_url, max_template_size)
+        self.validate_template()
 
 
-	"""
-	Create or update an Amazon CloudFormation stack.
-	"""
-	def deploy(self):
-		try:
-			if self.stack_exists():
-				print "Updating existing '{0}' stack...".format(self.stack_name)
-				stack = self.cfn_connection.update_stack(self.stack_name,
-					template_body=self.template_body, parameters=self.parameters, capabilities=["CAPABILITY_IAM"])
-			else:
-				print "Creating new '{0}' stack...".format(self.stack_name)
-				stack = self.cfn_connection.create_stack(self.stack_name, 
-					template_body=self.template_body, parameters=self.parameters,
-					notification_arns=self.notification_arns, disable_rollback=True, capabilities=["CAPABILITY_IAM"])
-		except BotoServerError as e:
-			print "({0}) {1}:\n{2}\nError deploying. Error message: {3}".format(e.status, e.reason, e.body, e.message)
-			sys.exit(1)
-		print "Stack deployed."
-		return stack
+    """
+    Create or update an Amazon CloudFormation stack.
+    """
+    def deploy(self):
+        try:
+            if self.stack_exists():
+                print "Updating existing '{0}' stack...".format(self.stack_name)
+                stack = self.cfn_connection.update_stack(self.stack_name,
+                    template_body=self.template_body, parameters=self.parameters, capabilities=["CAPABILITY_IAM"])
+            else:
+                print "Creating new '{0}' stack...".format(self.stack_name)
+                stack = self.cfn_connection.create_stack(self.stack_name, 
+                    template_body=self.template_body, parameters=self.parameters,
+                    notification_arns=self.notification_arns, disable_rollback=True, capabilities=["CAPABILITY_IAM"])
+        except BotoServerError as e:
+            print "({0}) {1}:\n{2}\nError deploying. Error message: {3}".format(e.status, e.reason, e.body, e.message)
+            sys.exit(1)
+        print "Stack deployed."
+        return stack
 
-	"""
-	Determines if a CloudFormation stack exists for a stack name.
-	"""
-	def stack_exists(self):
-		try:
-			self.cfn_connection.describe_stacks(stack_name_or_id=self.stack_name)
-			return True
-		except:
-			return False
+    """
+    Determines if a CloudFormation stack exists for a stack name.
+    """
+    def stack_exists(self):
+        try:
+            self.cfn_connection.describe_stacks(stack_name_or_id=self.stack_name)
+            return True
+        except:
+            return False
 
-	"""
-	Validates a CloudFormation (CFN) template. 
-	If there is an error, communicate the reason and exit (1).
-	"""
-	def validate_template(self):
-		try:
-			self.cfn_connection.validate_template(template_body=self.template_body)
-			print "Template successfully validated."
-		except BotoServerError as e:
-			print "({0}) {1}:\n{2}\nError during template validation.".format(e.status, e.reason, e.body)
-			sys.exit(1)
+    """
+    Validates a CloudFormation (CFN) template. 
+    If there is an error, communicate the reason and exit (1).
+    """
+    def validate_template(self):
+        try:
+            self.cfn_connection.validate_template(template_body=self.template_body)
+            print "Template successfully validated."
+        except BotoServerError as e:
+            print "({0}) {1}:\n{2}\nError during template validation.".format(e.status, e.reason, e.body)
+            sys.exit(1)
 
-	"""
-	Read up to max_size bytes from a file and return it as a string.
-	"""
-	def read_file(self, url, max_size):
-		fd = os.open(self.template_url, os.O_RDONLY)
-		file_contents = os.read(fd, max_size)
-		os.close(fd)
-		return file_contents
+    """
+    Read up to max_size bytes from a file and return it as a string.
+    """
+    def read_file(self, url, max_size):
+        fd = os.open(self.template_url, os.O_RDONLY)
+        file_contents = os.read(fd, max_size)
+        os.close(fd)
+        return file_contents
 
-	"""
-	Given a Simple Notification Service (SNS) topic name, return the topic's ARN.
-	"""
-	def get_sns_topic(self, topic_name):
-		for topic in self.sns_connection.get_all_topics()['ListTopicsResponse']['ListTopicsResult']['Topics']:
-			if topic_name in topic['TopicArn']:
-				return topic['TopicArn']
-		print "SNS topic \"{0}\" not found. Is SNS topic \"{0}\" deployed?".format(topic_name)
-		return None
+    """
+    Given a Simple Notification Service (SNS) topic name, return the topic's ARN.
+    """
+    def get_sns_topic(self, topic_name):
+        for topic in self.sns_connection.get_all_topics()['ListTopicsResponse']['ListTopicsResult']['Topics']:
+            if topic_name in topic['TopicArn']:
+                return topic['TopicArn']
+        print "SNS topic \"{0}\" not found. Is SNS topic \"{0}\" deployed?".format(topic_name)
+        return None
 
-	"""
-	Given a name, return a Virtual Private Cloud (VPC).
-	"""
-	def get_vpc(self, vpc_name):
-		for vpc in self.vpc_connection.get_all_vpcs():
-			try:
-				if vpc.tags['Name'] == vpc_name:
-					return vpc
-			except KeyError:
-				continue
-		print "VPC \"{0}\" not found. Is VPC \"{0}\" deployed?".format(vpc_name)
-		return None
+    """
+    Given a name, return a Virtual Private Cloud (VPC).
+    """
+    def get_vpc(self, vpc_name):
+        for vpc in self.vpc_connection.get_all_vpcs():
+            try:
+                if vpc.tags['Name'] == vpc_name:
+                    return vpc
+            except KeyError:
+                continue
+        print "VPC \"{0}\" not found. Is VPC \"{0}\" deployed?".format(vpc_name)
+        return None
 
-	"""
-	Find a subnet by name within a specific VPC and availability zone.
-	"""
-	def get_subnet(self, subnet_name, vpc_id, zone):
-		for subnet in self.vpc_connection.get_all_subnets(filters=[("vpcId", vpc_id), ("availabilityZone", zone)]):
-			try:
-				if subnet.tags['Name'] == subnet_name:
-					return subnet
-			except KeyError:
-				continue
-		print "Subnet \"{0}\" not found. Is subnet \"{0}\" deployed?".format(subnet_name)
-		return None
+    """
+    Find a subnet by name within a specific VPC and availability zone.
+    """
+    def get_subnet(self, subnet_name, vpc_id, zone):
+        for subnet in self.vpc_connection.get_all_subnets(filters=[("vpcId", vpc_id), ("availabilityZone", zone)]):
+            try:
+                if subnet.tags['Name'] == subnet_name:
+                    return subnet
+            except KeyError:
+                continue
+        print "Subnet \"{0}\" not found. Is subnet \"{0}\" deployed?".format(subnet_name)
+        return None
 
-	"""
-	Find a full role name by given partial name.
-	"""
-	def get_role_name(self, name):
-		for role in self.iam_connection.list_roles()['list_roles_response']['list_roles_result']['roles']:
-			if name in role['role_name']:
-				return role['role_name']
-		return None
+    """
+    Find a full role name by given partial name.
+    """
+    def get_role_name(self, name):
+        for role in self.iam_connection.list_roles()['list_roles_response']['list_roles_result']['roles']:
+            if name in role['role_name']:
+                return role['role_name']
+        return None
+
+"""
+Given cli arguments. Enable boto debug output if debug flag is True.
+"""
+def enable_debug(args):
+    if "debug" in args.__dict__ and args.debug == True:
+        if not config.has_section('Boto'):
+            config.add_section('Boto')
+        config.set('Boto', 'debug', '2')

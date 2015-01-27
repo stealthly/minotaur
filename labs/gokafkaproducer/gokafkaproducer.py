@@ -20,9 +20,9 @@ from argparse import ArgumentParser
 if __name__ == "__main__" and __package__ is None:
     from os import sys, path
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from lab import Lab
+    from lab import Lab, enable_debug
 else:
-    from ..lab import Lab
+    from ..lab import Lab, enable_debug
 
 class GoKafkaProducer(Lab):
     def __init__(self, environment, deployment, region, zone,
@@ -63,6 +63,7 @@ parser.add_argument('-c', '--producer-url', default='', help='The Kafka Producer
 
 def main():
     args, unknown = parser.parse_known_args()
+    enable_debug(args)
     lab = GoKafkaProducer(args.environment, args.deployment, args.region, args.availability_zone, 
         str(args.num_nodes), args.instance_type, args.producer_url)
     lab.deploy()

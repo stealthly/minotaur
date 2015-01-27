@@ -20,37 +20,37 @@ from argparse import ArgumentParser
 if __name__ == "__main__" and __package__ is None:
     from os import sys, path
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-    from lab import Lab
+    from lab import Lab, enable_debug
 else:
-    from ..lab import Lab
+    from ..lab import Lab, enable_debug
 
 class Kafka(Lab):
-	def __init__(self, environment, deployment, region, zone, instance_count,
-				 instance_type, zk_version, kafka_url):
-		super(Kafka, self).__init__(environment, deployment, region, zone)
-		vpc_id = self.get_vpc(environment).id
-		private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
-		topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
-		role_name = self.get_role_name("GenericDev")
-		# m1, c1, m2 instances need old paravirtualized ami. New instances need hvm enabled ami.
-		if instance_type in ["m1.small", "m1.medium", "m1.large", "m1.xlarge", "c1.medium",
-							 "c1.large", "m2.xlarge", "m2.2xlarge","m2.4xlarge"]:
-			virtualization = "paravirt"
-		else:
-			virtualization = "hvm"
-		self.parameters.append(("KeyName",          environment))
-		self.parameters.append(("Environment",      environment))
-		self.parameters.append(("Deployment",       deployment))
-		self.parameters.append(("AvailabilityZone", zone))
-		self.parameters.append(("NumberOfNodes",    instance_count))
-		self.parameters.append(("InstanceType",     instance_type))
-		self.parameters.append(("ZookeeperVersion", zk_version))
-		self.parameters.append(("KafkaUrl",         kafka_url))
-		self.parameters.append(("VpcId",            vpc_id))
-		self.parameters.append(("PrivateSubnetId",  private_subnet_id))
-		self.parameters.append(("AsgTopicArn",      topic_arn))
-		self.parameters.append(("RoleName",         role_name))
-		self.parameters.append(("Virtualization",   virtualization))
+    def __init__(self, environment, deployment, region, zone, instance_count,
+                 instance_type, zk_version, kafka_url):
+        super(Kafka, self).__init__(environment, deployment, region, zone)
+        vpc_id = self.get_vpc(environment).id
+        private_subnet_id = self.get_subnet("private." + environment, vpc_id, zone).id
+        topic_arn = self.get_sns_topic("autoscaling-notifications-" + environment)
+        role_name = self.get_role_name("GenericDev")
+        # m1, c1, m2 instances need old paravirtualized ami. New instances need hvm enabled ami.
+        if instance_type in ["m1.small", "m1.medium", "m1.large", "m1.xlarge", "c1.medium",
+                             "c1.large", "m2.xlarge", "m2.2xlarge","m2.4xlarge"]:
+            virtualization = "paravirt"
+        else:
+            virtualization = "hvm"
+        self.parameters.append(("KeyName",          environment))
+        self.parameters.append(("Environment",      environment))
+        self.parameters.append(("Deployment",       deployment))
+        self.parameters.append(("AvailabilityZone", zone))
+        self.parameters.append(("NumberOfNodes",    instance_count))
+        self.parameters.append(("InstanceType",     instance_type))
+        self.parameters.append(("ZookeeperVersion", zk_version))
+        self.parameters.append(("KafkaUrl",         kafka_url))
+        self.parameters.append(("VpcId",            vpc_id))
+        self.parameters.append(("PrivateSubnetId",  private_subnet_id))
+        self.parameters.append(("AsgTopicArn",      topic_arn))
+        self.parameters.append(("RoleName",         role_name))
+        self.parameters.append(("Virtualization",   virtualization))
 
 parser = ArgumentParser(description='Deploy Kafka Broker(s) to an AWS CloudFormation environment.')
 parser.add_argument('--debug', action='store_const', const=True, help='Enable debug mode')
@@ -64,10 +64,11 @@ parser.add_argument('-v', '--zk-version', default='3.4.6', help='The Zookeeper v
 parser.add_argument('-k', '--kafka-url', default='', help='The Kafka URL')
 
 def main():
-	args, unknown = parser.parse_known_args()
-	lab = Kafka(args.environment, args.deployment, args.region, args.availability_zone, 
-		str(args.num_nodes), args.instance_type, args.zk_version, args.kafka_url)
-	lab.deploy()
+    args, unknown = parser.parse_known_args()
+    enable_debug(args)
+    lab = Kafka(args.environment, args.deployment, args.region, args.availability_zone, 
+        str(args.num_nodes), args.instance_type, args.zk_version, args.kafka_url)
+    lab.deploy()
 
 if __name__ == '__main__':
-	main()
+    main()
