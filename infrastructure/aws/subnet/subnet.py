@@ -44,10 +44,10 @@ parser.add_argument('-z', '--availability-zone', required=True, help='Isolated l
 parser.add_argument('-p', '--public-private', required=True, help='Network publicity option: public or private')
 parser.add_argument('-c', '--cidr-block', required=True, help='Subnet mask of subnet to create')
 
-def main():
+def main(parser):
 	args, unknown = parser.parse_known_args()
 	infrastructure = Subnet(args.environment, args.region, args.availability_zone, args.public_private, args.cidr_block)
 	infrastructure.deploy()
 
 if __name__ == '__main__':
-	main()
+	main(parser)

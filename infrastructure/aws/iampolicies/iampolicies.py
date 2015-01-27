@@ -32,10 +32,10 @@ class Iampolicies(Infrastructure):
 
 parser = ArgumentParser(description='Deploy iam policies to an AWS CloudFormation environment.')
 
-def main():
+def main(parser):
 	args, unknown = parser.parse_known_args()
 	infrastructure = Iampolicies()
 	infrastructure.deploy()
 
 if __name__ == '__main__':
-	main()
+	main(parser)
