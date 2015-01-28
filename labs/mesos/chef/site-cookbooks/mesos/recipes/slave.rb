@@ -51,4 +51,4 @@ File.rename('/etc/resolv.conf', '/etc/resolv.conf.old')
 File.rename('/etc/resolv.conf.new', '/etc/resolv.conf')
 
 # Include slave common stuff
-include_recipe 'mesos::slave_common'
+include_recipe 'mesos::slave-common'

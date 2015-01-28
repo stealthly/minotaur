@@ -15,7 +15,7 @@ end
 include_recipe 'mesos::common'
 
 # Include slave common stuff
-include_recipe 'mesos::slave_common'
+include_recipe 'mesos::slave-common'
 
 # Manage hostname and it's resolution
 hostname = node['mesos']['master']['hostname']
@@ -99,3 +99,6 @@ else
     provider Chef::Provider::Service::Init::Redhat
   end
 end
+
+# Include mesos-dns stuff
+include_recipe 'mesos::mesos-dns'
