@@ -14,6 +14,9 @@ end
 # Include common stuff
 include_recipe 'mesos::common'
 
+# Include slave common stuff
+include_recipe 'mesos::slave_common'
+
 # Manage hostname and it's resolution
 hostname = node['mesos']['master']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['master']['interface']}", :private_ipv4)

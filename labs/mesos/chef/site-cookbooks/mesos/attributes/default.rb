@@ -21,7 +21,7 @@ default[:mesos][:slave][:attributes][:strict] = 'false'
 default[:mesos][:slave][:attributes][:recover] = 'reconnect'
 default[:mesos][:slave][:attributes][:containerizers] = 'mesos,docker'
 
-default[:mesos][:mount_point] = '/mnt/mesos'
+default[:mesos][:mount_point] = default[:mesos][:work_dir]
 default[:mesos][:volume_label] = 'mesos-fs'
 default[:mesos][:device_id] = '/dev/xvdc'
 
@@ -35,6 +35,9 @@ default[:mesos][:aurora][:tarball_name] = "aurora-scheduler-#{node[:mesos][:auro
 default[:mesos][:aurora][:tarball_url] = "https://s3.amazonaws.com/bdoss-deploy/mesos/aurora/#{node[:mesos][:aurora][:tarball_name]}"
 default[:mesos][:aurora][:install_dir] = '/opt/apache/aurora'
 default[:mesos][:aurora][:http_port] = 8081
+
+default[:mesos][:dns][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/mesos/mesos-dns/mesos-dns"
+default[:mesos][:dns][:install_dir] = '/usr/local/mesos-dns'
 
 default[:java][:jdk_version] = '7'
 

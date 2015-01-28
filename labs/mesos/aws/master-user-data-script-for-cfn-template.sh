@@ -40,6 +40,9 @@ LAB_PATH="labs/mesos"
 INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
 RUBY_URL="https://rvm_io.global.ssl.fastly.net/binaries/ubuntu/14.04/x86_64/ruby-2.1.5.tar.bz2"
 
+# Attach public network interface
+aws ec2 attach-network-interface --region "$REGION" --instance-id "$INSTANCE_ID" --network-interface-id "$PUBLIC_NETWORK_INTERFACE_ID" --device-index=1
+
 # Update repos and install dependencies
 apt-get update
 apt-get -y install git-core build-essential awscli
