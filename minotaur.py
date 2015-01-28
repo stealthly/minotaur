@@ -32,9 +32,6 @@ lab_list = [i for i in os.listdir(lab_dir) if os.path.exists(lab_dir+'/'+i+'/'+i
 for module in lab_list:
     exec('from labs.{0} import {0}'.format(module))
 
-deploy_usage = '''usage: minotaur deploy <deployment> [flags...]
-'''
-
 
 class Minotaur:
     def __init__(self):

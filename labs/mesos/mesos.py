@@ -81,10 +81,15 @@ parser_master.add_argument('-u', '--modules', default='marathon', choices=['mara
 
 def main(parser):
     args, unknown = parser.parse_known_args()
-    lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone,
-                str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version,
-                args.mesos, args.aurora_url, args.marathon_version, args.modules)
     enable_debug(args)
+    if args.mesos == 'master':
+        lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone,
+                    str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version,
+                    args.mesos, args.aurora_url, args.marathon_version, args.modules)
+    elif args.mesos == 'slave':
+        lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone,
+                    str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version,
+                    args.mesos)
     lab.deploy()
 
 if __name__ == '__main__':
