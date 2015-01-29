@@ -80,6 +80,17 @@ template '/etc/default/mesos-master' do
   notifies :restart, "service[mesos-master]", :delayed
 end
 
+node.override[:mesos][:master][:attributes][:ip] = ip_address
+
+node[:mesos][:master][:attributes].each do |opt, arg|
+  file "/etc/mesos-master/#{opt}" do
+    content arg
+    mode 0644
+    action :create
+    notifies :restart, "service[mesos-master]", :delayed
+  end
+end
+
 # Returning master to autostart
 template '/etc/init/mesos-master.conf' do
   source 'master/mesos-master.conf.erb'

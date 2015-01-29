@@ -16,6 +16,8 @@ default[:mesos][:port] = 5050
 default[:mesos][:master][:hostname] = 'mesos-master'
 default[:mesos][:slave][:hostname] = 'mesos-slave'
 
+default[:mesos][:master][:attributes][:work_dir] = default[:mesos][:work_dir]
+
 default[:mesos][:slave][:attributes][:checkpoint] = 'true'
 default[:mesos][:slave][:attributes][:strict] = 'false'
 default[:mesos][:slave][:attributes][:recover] = 'reconnect'
