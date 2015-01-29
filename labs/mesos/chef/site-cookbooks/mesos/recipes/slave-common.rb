@@ -66,6 +66,10 @@ directory '/etc/mesos-slave' do
   mode 0755
 end
 
+slave_ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['interface']}", :private_ipv4)
+
+node.override[:mesos][:slave][:attributes][:ip] = slave_ip_address
+
 node[:mesos][:slave][:attributes].each do |opt, arg|
   file "/etc/mesos-slave/#{opt}" do
     content arg
