@@ -24,6 +24,9 @@ end
 # Configure mesos dns marathon config
 template "/tmp/mesos-dns.json" do
   source 'mesos-dns/mesos-dns.json.erb'
+  variables(
+    :slave => node[:mesos][:slave][:attributes][:ip]
+  )
 end
 
 # Insert new local dns nameserver in the top of resolv.conf

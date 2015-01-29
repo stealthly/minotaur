@@ -1,4 +1,4 @@
-<% @masters = @master.to_s.split(',') %>
+<% @masters = @masters.to_s.split(',') %>
 <%
   masters_list = []
   @masters.each do |master|
@@ -6,7 +6,7 @@
   end
 %>
 {
-  "masters": <%= @masters_list %>,
+  "masters": ["<%= @masters_list.join(',') %>"],
   "refreshSeconds": 60,
   "ttl": 60,
   "domain": "mesos",
