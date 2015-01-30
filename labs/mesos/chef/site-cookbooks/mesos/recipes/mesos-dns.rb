@@ -32,7 +32,11 @@ end
 
 # Insert new local dns nameserver in the top of resolv.conf
 File.open('/etc/resolv.conf.new', 'w') do |fo|
-  fo.puts 'nameserver 127.0.0.1'
+  File.open('/etc/resolv.conf') do |fi|
+    if not fi.read.include? 'nameserver 127.0.0.1'
+      fo.puts 'nameserver 127.0.0.1'
+    end
+  end
   File.foreach('/etc/resolv.conf') do |li|
     fo.puts li
   end

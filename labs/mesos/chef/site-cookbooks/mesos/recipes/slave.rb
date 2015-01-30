@@ -29,10 +29,28 @@ file '/etc/hostname' do
   notifies :reload, 'ohai[reload_hostname]', :immediately
 end
 
+# If we are on ec2 set the public dns as the hostname so that
+# mesos slave reports work properly in the UI.
+if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
+  bash 'set-aws-public-hostname' do
+    user 'root'
+    code <<-EOH
+      PUBLIC_DNS=`wget -q -O - http://instance-data.ec2.internal/latest/meta-data/public-hostname`
+      hostname $PUBLIC_DNS
+      echo $PUBLIC_DNS > /etc/hostname
+      HOSTNAME=$PUBLIC_DNS  # Fix the bash built-in hostname variable too
+    EOH
+    not_if 'hostname | grep amazonaws.com'
+  end
+  notifies :reload, 'ohai[reload_hostname]', :immediately
+end
+
 ohai 'reload_hostname' do
   plugin 'hostname'
   action :reload
 end
+
+hostname = node['mesos']['master']['hostname']
 
 hostsfile_entry "#{ip_address}" do
   hostname "#{hostname}"
@@ -41,7 +59,11 @@ end
 
 # Insert new local dns nameserver in the top of resolv.conf
 File.open('/etc/resolv.conf.new', 'w') do |fo|
-  fo.puts "nameserver #{node['mesos']['masters'].to_s.split(',').sample}"
+  File.open('/etc/resolv.conf') do |fi|
+    if not fi.read.include? "nameserver #{node['mesos']['masters'].to_s.split(',').sample}"
+      fo.puts "nameserver #{node['mesos']['masters'].to_s.split(',').sample}"
+    end
+  end
   File.foreach('/etc/resolv.conf') do |li|
     fo.puts li
   end

@@ -9,7 +9,7 @@ default[:mesos][:masters] = nil
 
 default[:mesos][:cluster_name] = 'stealth.ly'
 
-default[:mesos][:master][:interface] = 'eth1'
+default[:mesos][:master][:interface] = 'eth0'
 default[:mesos][:slave][:interface] = 'eth0'
 default[:mesos][:port] = 5050
 
