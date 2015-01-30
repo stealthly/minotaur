@@ -10,6 +10,7 @@ end
 remote_file "#{node[:mesos][:dns][:install_dir]}/mesos-dns" do
   action :create_if_missing
   source node[:mesos][:dns][:bin_url]
+  mode '0755'
 end
 
 # Configure mesos dns service

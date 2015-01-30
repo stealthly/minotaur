@@ -80,10 +80,16 @@ if [ -z "$ZK_SERVERS" ]; then
     ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 fi
 
+# Find mesos masters to configure mesos dns as default dns
+NODES_FILTER="[Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT][1]"
+MESOS_MASTERS_PUBLIC=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[0:length/2]' | jq --raw-output 'join(",")')
+MESOS_MASTERS_PRIVATE=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[length/2:length]' | jq --raw-output 'join(",")')
+
 # Run Chef
 mesos_version="$MESOS_VERSION" \
 zk_version="$ZK_VERSION" \
 zk_servers="$ZK_SERVERS" \
+mesos_masters="$MESOS_MASTERS_PRIVATE" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_slave.json"
 
 # Notify wait handle
