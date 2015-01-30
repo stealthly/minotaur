@@ -18,31 +18,30 @@ end
 hostname = node['mesos']['slave']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['interface']}", :private_ipv4)
 
-execute "hostname #{hostname}" do
-  only_if { node['hostname'] != hostname }
-  notifies :reload, 'ohai[reload_hostname]', :immediately
-end
-
-file '/etc/hostname' do
-  content "#{hostname}\n"
-  mode '0644'
-  notifies :reload, 'ohai[reload_hostname]', :immediately
-end
-
 # If we are on ec2 set the public dns as the hostname so that
 # mesos slave reports work properly in the UI.
 if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
   bash 'set-aws-public-hostname' do
     user 'root'
     code <<-EOH
-      PUBLIC_DNS=`wget -q -O - http://instance-data.ec2.internal/latest/meta-data/public-hostname`
+      PUBLIC_DNS=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
       hostname $PUBLIC_DNS
       echo $PUBLIC_DNS > /etc/hostname
       HOSTNAME=$PUBLIC_DNS  # Fix the bash built-in hostname variable too
     EOH
-    not_if 'hostname | grep amazonaws.com'
+    not_if 'hostname | grep ec2.internal'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
   end
-  notifies :reload, 'ohai[reload_hostname]', :immediately
+else
+  execute "hostname #{hostname}" do
+    only_if { node['hostname'] != hostname }
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
+  file '/etc/hostname' do
+    content "#{hostname}\n"
+    mode '0644'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
 end
 
 ohai 'reload_hostname' do
@@ -58,19 +57,13 @@ hostsfile_entry "#{ip_address}" do
 end
 
 # Insert new local dns nameserver in the top of resolv.conf
-File.open('/etc/resolv.conf.new', 'w') do |fo|
-  File.open('/etc/resolv.conf') do |fi|
-    if not fi.read.include? "nameserver #{node['mesos']['masters'].to_s.split(',').sample}"
-      fo.puts "nameserver #{node['mesos']['masters'].to_s.split(',').sample}"
-    end
-  end
-  File.foreach('/etc/resolv.conf') do |li|
-    fo.puts li
+ruby_block "insert_line" do
+  block do
+    file = Chef::Util::FileEdit.new("/etc/resolvconf/resolv.conf.d/head")
+    file.insert_line_if_no_match("/nameserver #{node['mesos']['masters'].to_s.split(',').sample}/", "nameserver #{node['mesos']['masters'].to_s.split(',').sample}")
+    file.write_file
   end
 end
-
-File.rename('/etc/resolv.conf', '/etc/resolv.conf.old')
-File.rename('/etc/resolv.conf.new', '/etc/resolv.conf')
 
 # Include slave common stuff
 include_recipe 'mesos::slave-common'

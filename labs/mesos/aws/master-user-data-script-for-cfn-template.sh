@@ -31,7 +31,6 @@ echo BEGIN
 #MARATHON_VERSION="{ "Ref": "MarathonVersion" }"
 #MODULES="{ "Ref": "Modules" }"
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
-#PUBLIC_NETWORK_INTERFACE_ID="{ "Ref": "PublicNetworkInterface" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -44,9 +43,6 @@ RUBY_URL="https://rvm_io.global.ssl.fastly.net/binaries/ubuntu/14.04/x86_64/ruby
 apt-get update
 apt-get -y install git-core build-essential awscli
 
-# Attach public network interface
-aws ec2 attach-network-interface --region "$REGION" --instance-id "$INSTANCE_ID" --network-interface-id "$PUBLIC_NETWORK_INTERFACE_ID" --device-index=1
-
 # Install rvm for the latest ruby version
 command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
 curl -sSL https://get.rvm.io | bash -s stable
@@ -56,12 +52,6 @@ echo "$RUBY_URL=91216074cb5f66ef5e33d47e5d3410148cc672dc73cc0d9edff92e00d20c9973
 rvm mount -r $RUBY_URL --verify-downloads 1
 rvm use 2.1 --default
 rvm rubygems current
-
-# Up public network interface
-echo -e "# The secondary network interface\nauto et1\niface eth1 inet dhcp" > /etc/network/interfaces.d/eth1.cfg
-ifup eth1
-# Make it lean to subnet mask
-route add default gw 10.0.2.1
 
 # Get latest version of jq
 wget https://stedolan.github.io/jq/download/linux64/jq -O /usr/local/bin/jq
@@ -89,21 +79,20 @@ ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FIL
 # If no zookeeper nodes found - form zookeeper cluster with zk's on mesos masters
 # Providing list of zk servers is also mandatory for aurora
 NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
-MESOS_MASTERS_PUBLIC=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[0:length/2]' | jq --raw-output 'join(",")')
-MESOS_MASTERS_PRIVATE=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[length/2:length]' | jq --raw-output 'join(",")')
+MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
 # Run Chef
 mesos_version="$MESOS_VERSION" \
 marathon_version="$MARATHON_VERSION" \
 modules="$MODULES" \
 zk_version="$ZK_VERSION" \
-mesos_masters="$MESOS_MASTERS_PUBLIC" \
+mesos_masters="$MESOS_MASTERS" \
 zk_servers="$ZK_SERVERS" \
 aurora_url="$AURORA_URL" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_master.json"
 
-# Wait 2 minutes untill marathon is up
-sleep 120
+# Wait 1 minute untill marathon is up
+sleep 60
 
 # Start mesos-dns on marathon
 curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json

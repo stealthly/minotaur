@@ -21,15 +21,12 @@ include_recipe 'mesos::slave-common'
 hostname = node['mesos']['master']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['master']['interface']}", :private_ipv4)
 
-execute "hostname #{hostname}" do
-  only_if { node['hostname'] != hostname }
-  notifies :reload, 'ohai[reload_hostname]', :immediately
-end
-
-file '/etc/hostname' do
-  content "#{hostname}\n"
+# Fix chef-solo bug(absence of ec2 hint)
+file '/etc/chef/ohai/hints/ec2.json' do
+  owner 'root'
+  group 'root'
   mode '0644'
-  notifies :reload, 'ohai[reload_hostname]', :immediately
+  action :create_if_missing
 end
 
 # If we are on ec2 set the public dns as the hostname so that
@@ -38,14 +35,24 @@ if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
   bash 'set-aws-public-hostname' do
     user 'root'
     code <<-EOH
-      PUBLIC_DNS=`wget -q -O - http://instance-data.ec2.internal/latest/meta-data/public-hostname`
+      PUBLIC_DNS=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
       hostname $PUBLIC_DNS
       echo $PUBLIC_DNS > /etc/hostname
       HOSTNAME=$PUBLIC_DNS  # Fix the bash built-in hostname variable too
     EOH
-    not_if 'hostname | grep amazonaws.com'
+    not_if 'hostname | grep ec2.internal'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
   end
-  notifies :reload, 'ohai[reload_hostname]', :immediately
+else
+  execute "hostname #{hostname}" do
+    only_if { node['hostname'] != hostname }
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
+  file '/etc/hostname' do
+    content "#{hostname}\n"
+    mode '0644'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
 end
 
 ohai 'reload_hostname' do
@@ -53,10 +60,8 @@ ohai 'reload_hostname' do
   action :reload
 end
 
-hostname = node['mesos']['master']['hostname']
-
 hostsfile_entry "#{ip_address}" do
-  hostname "#{hostname}"
+  hostname node['machinename']
   action :append
 end
 
@@ -99,6 +104,7 @@ template '/etc/default/mesos-master' do
 end
 
 node.override[:mesos][:master][:attributes][:ip] = ip_address
+node.override[:mesos][:master][:attributes][:hostname] = ip_address
 
 node[:mesos][:master][:attributes].each do |opt, arg|
   file "/etc/mesos-master/#{opt}" do
@@ -131,3 +137,15 @@ end
 
 # Include mesos-dns stuff
 include_recipe 'mesos::mesos-dns'
+
+# Template haproxy-marathon-bridge script
+template '/etc/init/mesos-master.conf' do
+  source 'haproxy-marathon-bridge.erb'
+end
+
+# Run haproxy-marathon-bridge script
+bash 'run-haproxy-marathon-bridge' do
+  user 'root'
+  code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
+  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
+end

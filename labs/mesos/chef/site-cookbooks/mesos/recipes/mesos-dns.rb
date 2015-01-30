@@ -31,16 +31,10 @@ template "/tmp/mesos-dns.json" do
 end
 
 # Insert new local dns nameserver in the top of resolv.conf
-File.open('/etc/resolv.conf.new', 'w') do |fo|
-  File.open('/etc/resolv.conf') do |fi|
-    if not fi.read.include? 'nameserver 127.0.0.1'
-      fo.puts 'nameserver 127.0.0.1'
-    end
-  end
-  File.foreach('/etc/resolv.conf') do |li|
-    fo.puts li
+ruby_block "insert_line" do
+  block do
+    file = Chef::Util::FileEdit.new("/etc/resolvconf/resolv.conf.d/head")
+    file.insert_line_if_no_match("/nameserver 127.0.0.1/", "nameserver 127.0.0.1")
+    file.write_file
   end
 end
-
-File.rename('/etc/resolv.conf', '/etc/resolv.conf.old')
-File.rename('/etc/resolv.conf.new', '/etc/resolv.conf')

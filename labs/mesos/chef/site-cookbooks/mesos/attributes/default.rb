@@ -5,6 +5,8 @@ default[:mesos][:subversion] = '1.0'
 default[:mesos][:work_dir] = '/mnt/mesos'
 default[:mesos][:log_dir] = '/var/log/mesos'
 
+default[:mesos][:set_ec2_hostname] = true
+
 default[:mesos][:masters] = nil
 
 default[:mesos][:cluster_name] = 'stealth.ly'
