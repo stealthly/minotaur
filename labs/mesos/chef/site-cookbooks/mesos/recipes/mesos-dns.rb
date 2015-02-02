@@ -38,3 +38,16 @@ ruby_block "insert_line" do
     file.write_file
   end
 end
+
+# Template haproxy-marathon-bridge script
+template '/usr/local/haproxy-marathon-bridge' do
+  mode 0755
+  source 'haproxy-marathon-bridge.erb'
+end
+
+# Run haproxy-marathon-bridge script
+bash 'run-haproxy-marathon-bridge' do
+  user 'root'
+  code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
+  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
+end

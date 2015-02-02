@@ -81,6 +81,10 @@ ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FIL
 NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
 MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
+# Fix chef-solo bug(absence of ec2 hint)
+mkdir -p /etc/chef/ohai/hints
+touch /etc/chef/ohai/hints/ec2.json
+
 # Run Chef
 mesos_version="$MESOS_VERSION" \
 marathon_version="$MARATHON_VERSION" \

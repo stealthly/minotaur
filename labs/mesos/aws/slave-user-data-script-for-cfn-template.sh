@@ -85,6 +85,10 @@ NODES_FILTER="[Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT][1]"
 MESOS_MASTERS_PUBLIC=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[0:length/2]' | jq --raw-output 'join(",")')
 MESOS_MASTERS_PRIVATE=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[length/2:length]' | jq --raw-output 'join(",")')
 
+# Fix chef-solo bug(absence of ec2 hint)
+mkdir -p /etc/chef/ohai/hints
+touch /etc/chef/ohai/hints/ec2.json
+
 # Run Chef
 mesos_version="$MESOS_VERSION" \
 zk_version="$ZK_VERSION" \

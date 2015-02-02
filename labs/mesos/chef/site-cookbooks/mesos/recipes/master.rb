@@ -21,14 +21,6 @@ include_recipe 'mesos::slave-common'
 hostname = node['mesos']['master']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['master']['interface']}", :private_ipv4)
 
-# Fix chef-solo bug(absence of ec2 hint)
-file '/etc/chef/ohai/hints/ec2.json' do
-  owner 'root'
-  group 'root'
-  mode '0644'
-  action :create_if_missing
-end
-
 # If we are on ec2 set the public dns as the hostname so that
 # mesos master redirection works properly.
 if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
@@ -137,15 +129,3 @@ end
 
 # Include mesos-dns stuff
 include_recipe 'mesos::mesos-dns'
-
-# Template haproxy-marathon-bridge script
-template '/etc/init/mesos-master.conf' do
-  source 'haproxy-marathon-bridge.erb'
-end
-
-# Run haproxy-marathon-bridge script
-bash 'run-haproxy-marathon-bridge' do
-  user 'root'
-  code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
-  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
-end
