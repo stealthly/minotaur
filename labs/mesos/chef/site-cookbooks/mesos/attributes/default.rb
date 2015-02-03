@@ -23,7 +23,8 @@ default[:mesos][:master][:attributes][:work_dir] = default[:mesos][:work_dir]
 default[:mesos][:slave][:attributes][:checkpoint] = 'true'
 default[:mesos][:slave][:attributes][:strict] = 'false'
 default[:mesos][:slave][:attributes][:recover] = 'reconnect'
-default[:mesos][:slave][:attributes][:containerizers] = 'mesos,docker'
+default[:mesos][:slave][:attributes][:containerizers] = 'docker,mesos'
+default[:mesos][:slave][:attributes][:executor_registration_timeout] = '5mins'
 
 default[:mesos][:mount_point] = default[:mesos][:work_dir]
 default[:mesos][:volume_label] = 'mesos-fs'
@@ -33,6 +34,8 @@ default[:mesos][:slave][:isolation_type] = 'cgroups/cpu,cgroups/mem'
 
 default[:mesos][:marathon][:version] = '0.7.5'
 default[:mesos][:marathon][:subversion] = '1.0'
+default[:mesos][:marathon][:attributes][:framework_name] = 'marathon'
+default[:mesos][:marathon][:haproxy_bridge_url] = 'https://raw.githubusercontent.com/mesosphere/marathon/master/bin/haproxy-marathon-bridge'
 
 default[:mesos][:aurora][:version] = '0.6.1'
 default[:mesos][:aurora][:tarball_name] = "aurora-scheduler-#{node[:mesos][:aurora][:version]}.tar"

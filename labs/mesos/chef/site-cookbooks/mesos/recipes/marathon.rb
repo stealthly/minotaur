@@ -37,6 +37,15 @@ when 'rhel', 'centos', 'amazon'
   end
 end
 
+# Set configuration with environmental attributes
+node[:mesos][:marathon][:attributes].each do |opt, arg|
+  env "#MARATHON_#{opt.upcase}" do
+    value arg
+    action :create
+    notifies :restart, "service[marathon]", :delayed
+  end
+end
+
 service 'marathon' do
   action [ :enable, :start ]
 end

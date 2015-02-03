@@ -129,3 +129,10 @@ end
 
 # Include mesos-dns stuff
 include_recipe 'mesos::mesos-dns'
+
+# Run haproxy-marathon-bridge script
+bash 'haproxy-marathon-bridge' do
+  user 'root'
+  code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
+  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
+end

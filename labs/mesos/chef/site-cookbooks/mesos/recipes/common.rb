@@ -123,3 +123,10 @@ else
     provider Chef::Provider::Service::Init::Redhat
   end
 end
+
+# Download haproxy-marathone-bridge script
+remote_file '/usr/local/bin/haproxy-marathon-bridge' do
+  action :create_if_missing
+  source node[:mesos][:marathon][:haproxy_bridge_url]
+  mode '0755'
+end

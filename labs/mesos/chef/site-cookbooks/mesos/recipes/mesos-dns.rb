@@ -39,14 +39,20 @@ ruby_block "insert_line" do
   end
 end
 
+# Update resolv.conf file
+bash 'resolvconf' do
+  user 'root'
+  code 'resolvconf -u'
+end
+
 # Template haproxy-marathon-bridge script
-template '/usr/local/haproxy-marathon-bridge' do
+template '/usr/local/bin/haproxy-marathon-bridge' do
   mode 0755
   source 'haproxy-marathon-bridge.erb'
 end
 
 # Run haproxy-marathon-bridge script
-bash 'run-haproxy-marathon-bridge' do
+bash 'haproxy-marathon-bridge' do
   user 'root'
   code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
   not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
