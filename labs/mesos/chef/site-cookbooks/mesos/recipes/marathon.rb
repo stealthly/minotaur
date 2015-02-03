@@ -39,11 +39,7 @@ end
 
 # Set configuration with environmental attributes
 node[:mesos][:marathon][:attributes].each do |opt, arg|
-  env "#MARATHON_#{opt.upcase}" do
-    value arg
-    action :create
-    notifies :restart, "service[marathon]", :delayed
-  end
+  ENV["#MARATHON_#{opt.upcase}"] = arg
 end
 
 service 'marathon' do
