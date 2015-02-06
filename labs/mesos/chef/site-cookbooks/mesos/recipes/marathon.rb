@@ -45,3 +45,7 @@ end
 service 'marathon' do
   action [ :enable, :start ]
 end
+
+if ENV['mesos-dns'] == 'true'
+  include_recipe 'mesos::mesos-dns'
+end

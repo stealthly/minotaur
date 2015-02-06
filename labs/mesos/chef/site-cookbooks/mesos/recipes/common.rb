@@ -38,7 +38,7 @@ end
 # from mesosphere
 case node[:platform]
 when 'ubuntu'
-  if ENV['mesos_version'] == '0.21.0'
+  if ENV['mesos_version'] >= '0.21.0'
     apt_package "libapr1"
     apt_package "libsvn1"
   end
@@ -60,7 +60,7 @@ when 'rhel', 'centos', 'amazon'
     action :purge
   end
 
-  if ENV['mesos_version'] == '0.21.0'
+  if ENV['mesos_version'] >= '0.21.0'
     yum_package "libapr1"
     yum_package "libsvn1"
   end

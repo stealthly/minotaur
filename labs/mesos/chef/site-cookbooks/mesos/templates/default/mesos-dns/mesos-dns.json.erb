@@ -1,8 +1,24 @@
 {
-"cmd": "sudo  /usr/local/mesos-dns/mesos-dns -v -config=/usr/local/mesos-dns/config.json",
-"cpus": 1.0, 
-"mem": 1024,
-"id": "mesos-dns",
-"instances": 1,
-"constraints": [["hostname", "CLUSTER", "<%= @slave %>"]]
+  "id": "mesos-dns",
+  "cmd": "/tmp/mesos-dns -v -config=/tmp/config.json",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "ubuntu:14.04",
+      "network": "BRIDGE",
+      "portMappings": [
+        { "containerPort": 53, "hostPort": 0, "servicePort": 53, "protocol": "tcp" }
+      ]
+    },
+    "volumes": [
+      {
+        "containerPath": "/tmp",
+        "hostPath": "<%= install_dir %>",
+        "mode": "RO"
+      }
+    ]
+  },
+  "instances": 1,
+  "cpus": 0.5,
+  "mem": 512
 }

@@ -14,8 +14,10 @@ end
 # Include common stuff
 include_recipe 'mesos::common'
 
-# Include slave common stuff
-include_recipe 'mesos::slave-common'
+# Include slave common stuff if in slave_on_master mode
+if ENV['slave_on_master'] == 'true'
+  include_recipe 'mesos::slave-common'
+end
 
 # Manage hostname and it's resolution
 hostname = node['mesos']['master']['hostname']
@@ -53,16 +55,16 @@ ohai 'reload_hostname' do
 end
 
 hostsfile_entry "#{ip_address}" do
-  hostname node['machinename']
+  hostname node['fqdn'] || node['machinename']
   action :append
 end
 
 # Include node-specific stuff
 include_recipe 'mesos::zookeeper'
-if ENV['modules'].include? 'marathon'
+if ENV['marathon'] == 'true'
   include_recipe 'mesos::marathon'
 end
-if ENV['modules'].include? 'aurora'
+if ENV['aurora'] == 'true'
   include_recipe 'mesos::aurora'
 end
 

@@ -26,7 +26,7 @@ end
 template "/tmp/mesos-dns.json" do
   source 'mesos-dns/mesos-dns.json.erb'
   variables(
-    :slave => node[:mesos][:slave][:attributes][:ip]
+    :install_dir => node[:mesos][:dns][:install_dir]
   )
 end
 
@@ -43,17 +43,4 @@ end
 bash 'resolvconf' do
   user 'root'
   code 'resolvconf -u'
-end
-
-# Template haproxy-marathon-bridge script
-template '/usr/local/bin/haproxy-marathon-bridge' do
-  mode 0755
-  source 'haproxy-marathon-bridge.erb'
-end
-
-# Run haproxy-marathon-bridge script
-bash 'haproxy-marathon-bridge' do
-  user 'root'
-  code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
-  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
 end

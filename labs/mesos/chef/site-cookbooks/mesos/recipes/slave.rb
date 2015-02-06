@@ -50,7 +50,7 @@ ohai 'reload_hostname' do
 end
 
 hostsfile_entry "#{ip_address}" do
-  hostname node['machinename']
+  hostname node['fqdn'] || node['machinename']
   action :append
 end
 
