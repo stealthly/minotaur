@@ -129,9 +129,6 @@ else
   end
 end
 
-# Include mesos-dns stuff
-include_recipe 'mesos::mesos-dns'
-
 # Run haproxy-marathon-bridge script
 bash 'haproxy-marathon-bridge' do
   user 'root'
