@@ -1,4 +1,5 @@
 depends "apt"
 depends "zookeeper"
 depends "hostsfile"
+depends "route53"
 name "mesos"

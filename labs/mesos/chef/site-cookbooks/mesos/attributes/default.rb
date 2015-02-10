@@ -7,7 +7,9 @@ default[:mesos][:log_dir] = '/var/log/mesos'
 
 default[:mesos][:set_ec2_hostname] = true
 
+default[:mesos][:slaves] = nil
 default[:mesos][:masters] = nil
+default[:mesos][:masters_eip] = nil
 
 default[:mesos][:cluster_name] = 'stealth.ly'
 
@@ -57,3 +59,5 @@ default[:zookeeper][:data_dir] = '/var/lib/zookeeper'
 default[:zookeeper][:id] = '0'
 default[:zookeeper][:peer_port] = '2888'
 default[:zookeeper][:leader_port] = '3888'
+
+default[:route53][:zone_id] = nil

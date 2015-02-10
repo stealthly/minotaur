@@ -124,9 +124,22 @@ else
   end
 end
 
-# Download haproxy-marathone-bridge script
-remote_file '/usr/local/bin/haproxy-marathon-bridge' do
-  action :create_if_missing
-  source node[:mesos][:marathon][:haproxy_bridge_url]
+# Template haproxy-marathone-bridge script
+template '/usr/local/bin/haproxy-marathon-bridge' do
+  source 'mesos-dns/haproxy-marathon-bridge.erb'
+  variables(
+    mesos_master: "#{node['mesos']['masters'].split(',').sample}",
+  )
   mode '0755'
+end
+
+# Edit rsyslog.conf to enable haproxy logging
+ruby_block "insert_line" do
+  block do
+    file = Chef::Util::FileEdit.new("/etc/rsyslog.conf")
+    file.insert_line_if_no_match("/$ModLoad imudp/", "$ModLoad imudp")
+    file.insert_line_if_no_match("/$UDPServerAddress 127.0.0.1/", "$UDPServerAddress 127.0.0.1")
+    file.insert_line_if_no_match("/$UDPServerRun 514/", "$UDPServerRun 514")
+    file.write_file
+  end
 end

@@ -16,7 +16,7 @@
 # limitations under the License.
 from boto import cloudformation as cfn, sns, vpc
 from boto.exception import BotoServerError
-from boto import iam, config
+from boto import iam, config, route53
 import os, sys
 
 vpc_provider = "aws"
@@ -30,6 +30,7 @@ class Lab(object):
         self.sns_connection = sns.connect_to_region(region)
         self.vpc_connection = vpc.connect_to_region(region)
         self.iam_connection = iam.connect_to_region("universal")
+        self.route53_connection = route53.connection.Route53Connection()
 
         # Temporary python class -> directory name hack
         self.lab_dir = self.__class__.__name__.lower()
@@ -139,6 +140,18 @@ class Lab(object):
             if name in role['role_name']:
                 return role['role_name']
         return None
+
+    """
+    Find a full hosted zone id by given zone name.
+    """
+    def get_hosted_zone_id(self, name):
+        zone_id = self.route53_connection.get_zone(name).id
+        if zone_id == None:
+            print "Hosted zone \"{0}\" not found. Is hosted zone \"{0}\" created?".format(name)
+            return None
+        else:
+            zone_full_id = self.route53_connection.get_hosted_zone(zone_id).GetHostedZoneResponse.HostedZone.Id
+            return zone_full_id
 
 """
 Given cli arguments. Enable boto debug output if debug flag is True.

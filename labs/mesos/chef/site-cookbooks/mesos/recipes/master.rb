@@ -4,6 +4,8 @@
 # Overriging default variables
 node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
 node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node['mesos']['masters'] :  ENV['mesos_masters']
+node.override['mesos']['masters_eip'] = ENV['mesos_masters_eip'].to_s.empty? ? node['mesos']['masters_eip'] :  ENV['mesos_masters_eip']
+node.override['route53']['zone_id'] = ENV['hosted_zone_id'].to_s.empty? ? node['route53']['zone_id'] :  ENV['hosted_zone_id']
 
 # Override mesos network interface if in vagrant env
 vagrant=`grep "vagrant" /etc/passwd >/dev/null && echo -n "yes" || echo -n "no"`
@@ -127,6 +129,18 @@ else
     action [:start, :enable]
     provider Chef::Provider::Service::Init::Redhat
   end
+end
+
+include_recipe "route53"
+
+# Create route53 dns entry
+route53_record "create a dns record" do
+  name  "master#{node['mesos']['masters'].index(ip_address)}.#{node['route53']['zone_id']}"
+  value "#{node['mesos_masters_eip']}"
+  type  "A"
+  zone_id node[:route53][:zone_id]
+  overwrite true
+  action :create
 end
 
 # Run haproxy-marathon-bridge script

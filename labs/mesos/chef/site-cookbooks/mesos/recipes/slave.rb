@@ -4,6 +4,8 @@
 # Overriging default variables
 node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
 node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node['mesos']['masters'] :  ENV['mesos_masters']
+node.override['mesos']['slaves'] = ENV['mesos_slaves'].to_s.empty? ? node['mesos']['slaves'] :  ENV['mesos_slaves']
+node.override['route53']['zone_id'] = ENV['hosted_zone_id'].to_s.empty? ? node['route53']['zone_id'] :  ENV['hosted_zone_id']
 
 # Include common stuff
 include_recipe 'mesos::common'
@@ -71,6 +73,18 @@ end
 
 # Include slave common stuff
 include_recipe 'mesos::slave-common'
+
+include_recipe "route53"
+
+# Create route53 dns entry
+route53_record "create a record" do
+  name  "slave-#{ip_address.gsub('.', '-')}.#{node['route53']['zone_id']}"
+  value "#{node['mesos_masters_eip'].split(',').sample}"
+  type  "A"
+  zone_id node[:route53][:zone_id]
+  overwrite true
+  action :create
+end
 
 # Run haproxy-marathon-bridge script
 bash 'haproxy-marathon-bridge' do
