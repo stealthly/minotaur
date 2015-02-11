@@ -56,6 +56,7 @@ class Mesos(Lab):
         self.parameters.append(("RoleName",         role_name))
         self.parameters.append(("Virtualization",   virtualization))
         self.parameters.append(("HostedZoneId",     hosted_zone_id))
+        self.parameters.append(("HostedZoneName",   zone_name))
         if node == "master":
             public_subnet_id = self.get_subnet("public." + environment, vpc_id, zone).id
             self.parameters.append(("PublicSubnetId",  public_subnet_id))

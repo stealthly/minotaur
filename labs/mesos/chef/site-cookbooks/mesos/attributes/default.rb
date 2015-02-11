@@ -61,3 +61,4 @@ default[:zookeeper][:peer_port] = '2888'
 default[:zookeeper][:leader_port] = '3888'
 
 default[:route53][:zone_id] = nil
+default[:route53][:zone_id] = nil

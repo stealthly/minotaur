@@ -25,8 +25,6 @@ end
 if node[:platform] == 'ubuntu'
   apt_package "zlib1g-dev"
 end
-node.set['xml']['compiletime'] = true
-include_recipe 'xml::default'
 
 # Create working directory
 directory node[:mesos][:work_dir] do
