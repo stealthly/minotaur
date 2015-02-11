@@ -26,6 +26,9 @@ if node[:platform] == 'ubuntu'
   apt_package "zlib1g-dev"
 end
 node.set['xml']['compiletime'] = true
+node.set['xml']['nokogiri']['use_system_libraries'] = true
+node.set['xml']['nokogiri']['version'] = '1.6.1'
+include_recipe 'xml::default'
 
 # Create working directory
 directory node[:mesos][:work_dir] do
