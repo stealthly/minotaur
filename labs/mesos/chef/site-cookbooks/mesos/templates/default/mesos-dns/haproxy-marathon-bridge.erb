@@ -162,7 +162,7 @@ EOF
 }
 
 function backend {
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master =>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -177,10 +177,10 @@ function backend {
 
     cat <<EOF
 
-backend back_${slave_name}
+backend back-${slave_name}
   mode http
   option tcplog
-  server node_${slave_name} ${slave_ip//-/.}:5051
+  server node-${slave_name} ${slave_ip//-/.}:5051
 EOF
   done
 }
@@ -193,7 +193,7 @@ frontend slaves
   mode http
   option tcplog
 EOF
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master =>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -206,8 +206,8 @@ EOF
     shift 1
 
     cat <<EOF
-  acl host_${slave_name} hdr(host) -i ${slave_hostname}:5051
-  use_backend back_${slave_name} if host_${slave_name}
+  acl host-${slave_name} hdr(host) -i ${slave_hostname}:5051
+  use_backend back-${slave_name} if host-${slave_name}
 EOF
   done
 }
