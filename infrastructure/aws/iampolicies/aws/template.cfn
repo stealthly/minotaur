@@ -522,6 +522,28 @@
                     ]
                 }
             }
+        },
+        "Route53Access": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "route53-access",
+                "Roles": [
+                    { "Ref": "GenericDev" }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "route53:ChangeResourceRecordSets",
+                                "route53:GetHostedZone",
+                                "route53:ListResourceRecordSets"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+            }
         }
     }
 }
