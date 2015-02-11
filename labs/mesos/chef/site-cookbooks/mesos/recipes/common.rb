@@ -23,7 +23,10 @@ end
 
 # Install dependencies for nokogiri
 if node[:platform] == 'ubuntu'
-  apt_package "zlib1g-dev"
+  a = apt_package "zlib1g-dev" do
+    action :nothing
+  end
+  a.run_action(:install)
 end
 node.set['xml']['compiletime'] = true
 node.set['xml']['nokogiri']['use_system_libraries'] = true
