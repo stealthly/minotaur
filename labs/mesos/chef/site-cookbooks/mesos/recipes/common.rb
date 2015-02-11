@@ -21,6 +21,13 @@ chef_gem "ipaddr_extensions" do
   version '1.0.0'
 end
 
+# Install dependencies for nokogiri
+if node[:platform] == 'ubuntu'
+  apt_package "zlib1g-dev"
+end
+node.set['xml']['compiletime'] = true
+include_recipe 'xml::default'
+
 # Create working directory
 directory node[:mesos][:work_dir] do
   owner 'root'
@@ -34,7 +41,7 @@ if node.block_device.has_key?('xvdc')
   include_recipe 'mesos::mount-volume'
 end
 
-# Plarform-specific installation of packages
+# Platform-specific installation of packages
 # from mesosphere
 case node[:platform]
 when 'ubuntu'
