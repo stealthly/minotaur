@@ -28,7 +28,11 @@ if node[:platform] == 'ubuntu'
   end
   a.run_action(:install)
 end
+node.set[:xml][:compiletime] = true
+node.set[:xml][:nokogiri][:use_system_libraries] = true
+node.set[:xml][:nokogiri][:version] = '1.6.1'
 include_recipe 'xml::default'
+node.set[:route53][:fog_version] = '1.27'
 chef_gem "fog" do
   action :install
   version node['route53']['fog_version']
