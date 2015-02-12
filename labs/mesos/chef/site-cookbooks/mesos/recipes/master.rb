@@ -135,7 +135,7 @@ end
 template '/tmp/route53_record.json' do
   source 'mesos-dns/route53_record.json.erb'
   variables(
-    name: "master#{node['mesos']['masters'].index(ip_address)}.#{node['route53']['zone_name']}",
+    name: "master#{node['mesos']['masters'].split(',').index(ip_address)}.#{node['route53']['zone_name']}",
     value: "#{node['mesos']['masters_eip']}"
   )
 end

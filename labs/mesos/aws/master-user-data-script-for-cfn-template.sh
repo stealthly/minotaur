@@ -113,7 +113,7 @@ aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --chang
 sleep 60
 
 # Start mesos-dns on marathon
-if [[ $mesos_dns == true ]]
+if [[ $MESOS_DNS == true ]]
     then curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
 fi
 
