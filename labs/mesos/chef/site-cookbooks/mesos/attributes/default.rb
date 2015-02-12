@@ -62,3 +62,5 @@ default[:zookeeper][:leader_port] = '3888'
 
 default[:route53][:zone_id] = nil
 default[:route53][:zone_name] = nil
+default[:route53][:fog_version] = '1.27'
+default[:route53][:nokogiri_version] = '1.6.1'
