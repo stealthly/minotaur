@@ -5,7 +5,6 @@
 node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
 node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node['mesos']['masters'] :  ENV['mesos_masters']
 node.override['mesos']['masters_eip'] = ENV['mesos_masters_eip'].to_s.empty? ? node['mesos']['masters_eip'] :  ENV['mesos_masters_eip']
-node.override['route53']['zone_id'] = ENV['hosted_zone_id'].to_s.empty? ? node['route53']['zone_id'] :  ENV['hosted_zone_id']
 node.override['route53']['zone_name'] = ENV['hosted_zone_name'].to_s.empty? ? node['route53']['zone_name'] :  ENV['hosted_zone_name']
 
 # Override mesos network interface if in vagrant env
@@ -132,16 +131,13 @@ else
   end
 end
 
-include_recipe "route53"
-
-# Create route53 dns entry
-route53_record "create a dns record" do
-  name  "master#{node['mesos']['masters'].index(ip_address)}.#{node['route53']['zone_name']}"
-  value "#{node['mesos']['masters_eip']}"
-  type  "A"
-  zone_id node[:route53][:zone_id]
-  overwrite true
-  action :create
+# Template route53 dns entry json payload
+template '/tmp/route53_record.json' do
+  source 'mesos-dns/route53_record.json.erb'
+  variables(
+    name: "master#{node['mesos']['masters'].index(ip_address)}.#{node['route53']['zone_name']}",
+    value: "#{node['mesos']['masters_eip']}"
+  )
 end
 
 # Run haproxy-marathon-bridge script

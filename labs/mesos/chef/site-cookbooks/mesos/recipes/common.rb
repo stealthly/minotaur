@@ -21,40 +21,6 @@ chef_gem "ipaddr_extensions" do
   version '1.0.0'
 end
 
-# Install nokogiri with dependencies for route53 cookbook
-if node[:platform] == 'ubuntu'
-  apt_package "zlib1g-dev" do
-    action :nothing
-  end.run_action(:install)
-end
-node.set['build_essential']['compiletime'] = true
-include_recipe "build-essential"
-
-case node[:platform]
-when 'ubuntu'
-  apt_package 'libxml2-dev' do
-    action :nothing
-  end.run_action(:install)
-  apt_package 'libxslt-dev' do
-    action :nothing
-  end.run_action(:install)
-when 'rhel', 'centos', 'amazon'
-  yum_package 'libxml2-devel' do
-    action :nothing
-  end.run_action(:install)
-  yum_package 'libxslt-devel' do
-    action :nothing
-  end.run_action(:install)
-
-chef_gem "nokogiri" do
-  action :install
-  version node['route53']['nokogiri_version']
-end
-chef_gem "fog" do
-  action :install
-  version node['route53']['fog_version']
-end
-
 # Create working directory
 directory node[:mesos][:work_dir] do
   owner 'root'
