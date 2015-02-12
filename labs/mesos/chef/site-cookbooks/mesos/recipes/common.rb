@@ -146,5 +146,4 @@ end
 
 service 'rsyslog' do
   action [:restart]
-  provider Chef::Provider::Service::Init::Redhat
 end
