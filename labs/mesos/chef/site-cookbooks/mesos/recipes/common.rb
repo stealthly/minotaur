@@ -32,12 +32,12 @@ node.set[:xml][:compiletime] = true
 node.set[:xml][:nokogiri][:use_system_libraries] = true
 node.set[:xml][:nokogiri][:version] = '1.6.1'
 include_recipe 'xml::default'
+include_recipe 'xml::ruby'
 node.set[:route53][:fog_version] = '1.27'
 chef_gem "fog" do
   action :install
   version node['route53']['fog_version']
 end
-include_recipe 'xml::ruby'
 
 # Create working directory
 directory node[:mesos][:work_dir] do
