@@ -66,6 +66,9 @@ include_recipe 'mesos::zookeeper'
 if ENV['marathon'] == 'true'
   include_recipe 'mesos::marathon'
 end
+if ENV['mesos-dns'] == 'true'
+  include_recipe 'mesos::mesos-dns'
+end
 if ENV['aurora'] == 'true'
   include_recipe 'mesos::aurora'
 end

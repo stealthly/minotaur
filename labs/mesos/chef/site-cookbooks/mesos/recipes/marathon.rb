@@ -37,10 +37,6 @@ when 'rhel', 'centos', 'amazon'
   end
 end
 
-if ENV['mesos-dns'] == 'true'
-  include_recipe 'mesos::mesos-dns'
-end
-
 # Set configuration with environmental attributes
 node[:mesos][:marathon][:attributes].each do |opt, arg|
   ENV["MARATHON_#{opt.upcase}"] = arg

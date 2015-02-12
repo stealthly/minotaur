@@ -143,3 +143,8 @@ ruby_block "insert_line" do
     file.write_file
   end
 end
+
+service 'rsyslog' do
+  action [:restart]
+  provider Chef::Provider::Service::Init::Redhat
+end
