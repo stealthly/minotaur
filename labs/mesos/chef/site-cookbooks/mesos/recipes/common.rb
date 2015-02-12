@@ -29,12 +29,23 @@ if node[:platform] == 'ubuntu'
 end
 node.set['build_essential']['compiletime'] = true
 include_recipe "build-essential"
-apt_package 'libxml2-dev' do
-  action :nothing
-end.run_action(:install)
-apt_package 'libxslt1' do
-  action :nothing
-end.run_action(:install)
+
+case node[:platform]
+when 'ubuntu'
+  apt_package 'libxml2-dev' do
+    action :nothing
+  end.run_action(:install)
+  apt_package 'libxslt-dev' do
+    action :nothing
+  end.run_action(:install)
+when 'rhel', 'centos', 'amazon'
+  yum_package 'libxml2-devel' do
+    action :nothing
+  end.run_action(:install)
+  yum_package 'libxslt-devel' do
+    action :nothing
+  end.run_action(:install)
+
 chef_gem "nokogiri" do
   action :install
   version node['route53']['nokogiri_version']
