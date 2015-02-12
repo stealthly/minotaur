@@ -21,17 +21,19 @@ chef_gem "ipaddr_extensions" do
   version '1.0.0'
 end
 
-# Install dependencies for nokogiri
+# Install nokogiri with dependencies
 if node[:platform] == 'ubuntu'
   a = apt_package "zlib1g-dev" do
     action :nothing
   end
   a.run_action(:install)
 end
-node.set['xml']['compiletime'] = true
-node.set['xml']['nokogiri']['use_system_libraries'] = true
-node.set['xml']['nokogiri']['version'] = '1.6.1'
 include_recipe 'xml::default'
+chef_gem "fog" do
+  action :install
+  version node['route53']['fog_version']
+end
+include_recipe 'xml::ruby'
 
 # Create working directory
 directory node[:mesos][:work_dir] do
