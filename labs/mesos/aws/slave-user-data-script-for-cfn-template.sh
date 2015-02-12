@@ -28,7 +28,8 @@ echo BEGIN
 #ENVIRONMENT="{ "Ref": "Environment" }"
 #MESOS_VERSION="{ "Ref": "MesosVersion" }"
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
-#PUBLIC_NETWORK_INTERFACE_ID="{ "Ref": "PublicNetworkInterface" }"
+#HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
+#HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -81,9 +82,10 @@ if [ -z "$ZK_SERVERS" ]; then
 fi
 
 # Find mesos masters to configure mesos dns as default dns
-NODES_FILTER="[Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT][1]"
-MESOS_MASTERS_PUBLIC=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[0:length/2]' | jq --raw-output 'join(",")')
-MESOS_MASTERS_PRIVATE=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq 'sort[length/2:length]' | jq --raw-output 'join(",")')
+NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
+MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+QUERY="Reservations[].Instances[].PublicIpAddress"
+MESOS_MASTERS_EIP=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
 # Fix chef-solo bug(absence of ec2 hint)
 mkdir -p /etc/chef/ohai/hints
@@ -93,8 +95,13 @@ touch /etc/chef/ohai/hints/ec2.json
 mesos_version="$MESOS_VERSION" \
 zk_version="$ZK_VERSION" \
 zk_servers="$ZK_SERVERS" \
-mesos_masters="$MESOS_MASTERS_PRIVATE" \
+mesos_masters="$MESOS_MASTERS" \
+mesos_masters_eip="$MESOS_MASTERS_EIP" \
+hosted_zone_name="$HOSTED_ZONE_NAME" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_slave.json"
+
+# Create route53 dns entry
+aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch file:///tmp/route53_record.json
 
 # Notify wait handle
 WAIT_HANDLE_JSON="{\"Status\": \"SUCCESS\", \"Reason\": \"Done\", \"UniqueId\": \"1\", \"Data\": \"$INSTANCE_ID\"}"

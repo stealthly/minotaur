@@ -29,8 +29,13 @@ echo BEGIN
 #AURORA_URL="{ "Ref": "AuroraUrl" }"
 #MESOS_VERSION="{ "Ref": "MesosVersion" }"
 #MARATHON_VERSION="{ "Ref": "MarathonVersion" }"
-#MODULES="{ "Ref": "Modules" }"
+#MESOS_DNS="{ "Ref": "MesosDns" }"
+#MARATHON="{ "Ref": "Marathon" }"
+#AURORA="{ "Ref": "Aurora" }"
+#SLAVE_ON_MASTER="{ "Ref": "SlaveOnMaster" }"
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
+#HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
+#HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -80,6 +85,7 @@ ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FIL
 # Providing list of zk servers is also mandatory for aurora
 NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
 MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+MESOS_MASTERS_EIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
 
 # Fix chef-solo bug(absence of ec2 hint)
 mkdir -p /etc/chef/ohai/hints
@@ -88,18 +94,28 @@ touch /etc/chef/ohai/hints/ec2.json
 # Run Chef
 mesos_version="$MESOS_VERSION" \
 marathon_version="$MARATHON_VERSION" \
-modules="$MODULES" \
+mesos_dns="$MESOS_DNS" \
+marathon="$MARATHON" \
+aurora="$AURORA" \
+slave_on_master="$SLAVE_ON_MASTER" \
 zk_version="$ZK_VERSION" \
 mesos_masters="$MESOS_MASTERS" \
+mesos_masters_eip="$MESOS_MASTERS_EIP" \
+hosted_zone_name="$HOSTED_ZONE_NAME" \
 zk_servers="$ZK_SERVERS" \
 aurora_url="$AURORA_URL" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_master.json"
+
+# Create route53 dns entry
+aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch file:///tmp/route53_record.json
 
 # Wait 1 minute untill marathon is up
 sleep 60
 
 # Start mesos-dns on marathon
-curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
+if [[ $mesos_dns == true ]]
+    then curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
+fi
 
 # Notify wait handle
 WAIT_HANDLE_JSON="{\"Status\": \"SUCCESS\", \"Reason\": \"Done\", \"UniqueId\": \"1\", \"Data\": \"$INSTANCE_ID\"}"
