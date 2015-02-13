@@ -79,6 +79,11 @@ node[:mesos][:slave][:attributes].each do |opt, arg|
   end
 end
 
+if ENV['mesos_dns'] == 'true'
+  include_recipe 'mesos::mesos-dns'
+  include_recipe 'mesos::mesos-dns-common'
+end
+
 if node[:platform] == 'ubuntu'
   service 'mesos-slave' do
     action [:start, :enable]

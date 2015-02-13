@@ -109,11 +109,11 @@ chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/sol
 # Create route53 dns entry
 aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch file:///tmp/route53_record.json
 
-# Wait 1 minute untill marathon is up
-sleep 60
+# Wait up to 30 seconds untill marathon is up
+sleep $((RANDOM%15+15))
 
 # Start mesos-dns on marathon
-if [[ $MESOS_DNS == true ]]
+if [[ $MESOS_DNS == true && $(curl 127.0.0.1:8080/v2/apps) != *mesos-dns* ]]
     then curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
 fi
 

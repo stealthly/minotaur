@@ -81,7 +81,14 @@ if ENV['marathon'] == 'true'
   include_recipe 'mesos::marathon'
 end
 if ENV['mesos_dns'] == 'true'
-  include_recipe 'mesos::mesos-dns'
+  # Configure mesos dns marathon config
+  template "/tmp/mesos-dns.json" do
+    source 'mesos-dns/mesos-dns.json.erb'
+    variables(
+      :install_dir => node[:mesos][:dns][:install_dir]
+    )
+  end
+  include_recipe 'mesos::mesos-dns-common'
 end
 if ENV['aurora'] == 'true'
   include_recipe 'mesos::aurora'

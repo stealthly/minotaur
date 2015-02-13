@@ -30,6 +30,7 @@ echo BEGIN
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
 #HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
 #HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
+#MESOS_DNS="{ "Ref": "MesosDns" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -98,6 +99,7 @@ zk_servers="$ZK_SERVERS" \
 mesos_masters="$MESOS_MASTERS" \
 mesos_masters_eip="$MESOS_MASTERS_EIP" \
 hosted_zone_name="$HOSTED_ZONE_NAME" \
+mesos_dns="$MESOS_DNS" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_slave.json"
 
 # Create route53 dns entry
