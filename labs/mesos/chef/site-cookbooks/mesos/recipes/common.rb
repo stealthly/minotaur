@@ -124,15 +124,6 @@ else
   end
 end
 
-# Template haproxy-marathone-bridge script
-template '/usr/local/bin/haproxy-marathon-bridge' do
-  source 'mesos-dns/haproxy-marathon-bridge.erb'
-  variables(
-    mesos_master: "#{node['mesos']['masters'].split(',').sample}",
-  )
-  mode '0755'
-end
-
 # Edit rsyslog.conf to enable haproxy logging
 ruby_block "insert_line" do
   block do
@@ -142,8 +133,4 @@ ruby_block "insert_line" do
     file.insert_line_if_no_match("/$UDPServerRun 514/", "$UDPServerRun 514")
     file.write_file
   end
-end
-
-service 'rsyslog' do
-  action [:restart]
 end

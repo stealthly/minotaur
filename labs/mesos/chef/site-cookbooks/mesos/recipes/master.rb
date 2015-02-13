@@ -25,6 +25,20 @@ end
 hostname = node['mesos']['master']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['master']['interface']}", :private_ipv4)
 
+# Template haproxy-marathone-bridge script
+template '/usr/local/bin/haproxy-marathon-bridge' do
+  source 'mesos-dns/haproxy-marathon-bridge.erb'
+  variables(
+    mesos_master: "#{ip_address}",
+  )
+  mode '0755'
+end
+
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:restart]
+end
+
 # If we are on ec2 set the public dns as the hostname so that
 # mesos master redirection works properly.
 if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']

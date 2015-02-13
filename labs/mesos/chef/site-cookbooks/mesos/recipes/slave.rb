@@ -20,6 +20,18 @@ end
 hostname = node['mesos']['slave']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['interface']}", :private_ipv4)
 
+remote_file "/usr/local/bin/haproxy-marathon-bridge" do
+  source node[:mesos][:marathon][:haproxy_bridge_url]
+  action :create
+  mode '0755'
+  not_if { ::File.exist? '/usr/local/bin/haproxy-marathon-bridge' }
+end
+
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:restart]
+end
+
 # If we are on ec2 set the public dns as the hostname so that
 # mesos slave reports work properly in the UI.
 if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
