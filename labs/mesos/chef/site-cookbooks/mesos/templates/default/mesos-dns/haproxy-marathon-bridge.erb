@@ -34,6 +34,7 @@ cronjob_conf_file=/etc/"$name"/marathons
 cronjob=/etc/cron.d/"$name"
 script_path=/usr/local/bin/"$name"
 conf_file=haproxy.cfg
+mesos_leader=$(curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .leader | egrep -o '[0-9\:\.]*')
 
 function main {
   config "$@"
@@ -162,7 +163,7 @@ EOF
 }
 
 function backend {
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -193,7 +194,7 @@ frontend slaves
   mode http
   option tcplog
 EOF
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -202,7 +203,7 @@ EOF
     fi
 
     local slave_hostname="$1"
-    local slave_name=$(expr "$1" : '\([A-Za-z0-9]*\)')
+    local slave_name=$(expr "$1" : '\([A-Za-z0-9\-]*\)')
     shift 1
 
     cat <<EOF
