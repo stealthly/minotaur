@@ -29,12 +29,13 @@ USAGE
 }; function --help { -h ;}
 export LC_ALL=en_US.UTF-8
 
+JQ=/usr/local/bin/jq
 name=haproxy-marathon-bridge
 cronjob_conf_file=/etc/"$name"/marathons
 cronjob=/etc/cron.d/"$name"
 script_path=/usr/local/bin/"$name"
 conf_file=haproxy.cfg
-mesos_leader=$(curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | jq -r .leader | egrep -o '[0-9\:\.]*')
+mesos_leader=$(curl -sSfLk -m 10 -H 'Accept: text/plain' http://<%= @mesos_master %>:5050/master/state.json | $JQ -r .leader | egrep -o '[0-9\:\.]*')
 
 function main {
   config "$@"
@@ -163,7 +164,7 @@ EOF
 }
 
 function backend {
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | $JQ -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -194,7 +195,7 @@ frontend slaves
   mode http
   option tcplog
 EOF
-  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | jq -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until (curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | $JQ -r .slaves[].hostname); do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
