@@ -168,5 +168,7 @@ end
 bash 'haproxy-marathon-bridge' do
   user 'root'
   code 'haproxy-marathon-bridge install_haproxy_system 127.0.0.1:8080'
+  retries 5
+  retry_delay 10
   not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
 end
