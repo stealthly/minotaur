@@ -44,4 +44,5 @@ end
 
 service 'marathon' do
   action [ :enable, :start ]
+  subscribes :restart, "service[mesos-master]", :delayed
 end

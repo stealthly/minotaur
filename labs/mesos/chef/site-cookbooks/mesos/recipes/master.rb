@@ -34,11 +34,6 @@ template '/usr/local/bin/haproxy-marathon-bridge' do
   mode '0755'
 end
 
-# Restart rsyslog to enable haproxy logging
-service 'rsyslog' do
-  action [:restart]
-end
-
 # If we are on ec2 set the public dns as the hostname so that
 # mesos master redirection works properly.
 if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
@@ -171,4 +166,10 @@ bash 'haproxy-marathon-bridge' do
   retries 5
   retry_delay 10
   not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
+end
+
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:nothing]
+  subscribes :restart, "bash[haproxy-marathon-bridge]", :immediately
 end

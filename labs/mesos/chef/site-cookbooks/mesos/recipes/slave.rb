@@ -84,5 +84,13 @@ end
 bash 'haproxy-marathon-bridge' do
   user 'root'
   code "haproxy-marathon-bridge install_haproxy_system #{node['mesos']['masters'].to_s.split(',').sample}:8080"
+  retries 5
+  retry_delay 10
   not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
+end
+
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:nothing]
+  subscribes :restart, "bash[haproxy-marathon-bridge]", :immediately
 end
