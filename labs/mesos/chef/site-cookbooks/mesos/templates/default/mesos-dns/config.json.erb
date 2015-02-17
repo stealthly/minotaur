@@ -1,0 +1,16 @@
+<% @masters = @masters.to_s.split(',') %>
+<%
+  masters_list = []
+  @masters.each do |master|
+    masters_list << "#{master}:#{@mesos_port}"
+  end
+%>
+{
+  "masters": ["<%= masters_list.join('", "') %>"],
+  "refreshSeconds": 60,
+  "ttl": 60,
+  "domain": "mesos",
+  "port": 53,
+  "resolvers": ["10.0.0.2"],
+  "timeout": 5
+}

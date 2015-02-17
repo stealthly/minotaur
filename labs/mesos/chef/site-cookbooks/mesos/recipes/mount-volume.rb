@@ -1,9 +1,14 @@
+# Recipe for mounting volume to specific mount point
+#
+
+# Creating directories up to mount point
 directory "#{node[:mesos][:mount_point]}" do
   owner node[:current_user]
   mode "0755"
   recursive true
 end
 
+# Creating file system for volume label, device id pair
 execute 'mkfs' do
   command "mkfs -t ext3 -F -L #{node[:mesos][:volume_label]} #{node[:mesos][:device_id]}"
   # only if it's not mounted already

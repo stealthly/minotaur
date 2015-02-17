@@ -34,11 +34,11 @@ if node.block_device.has_key?('xvdc')
   include_recipe 'mesos::mount-volume'
 end
 
-# Plarform-specific installation of packages
+# Platform-specific installation of packages
 # from mesosphere
 case node[:platform]
 when 'ubuntu'
-  if ENV['mesos_version'] == '0.21.0'
+  if ENV['mesos_version'] >= '0.21.0'
     apt_package "libapr1"
     apt_package "libsvn1"
   end
@@ -60,7 +60,7 @@ when 'rhel', 'centos', 'amazon'
     action :purge
   end
 
-  if ENV['mesos_version'] == '0.21.0'
+  if ENV['mesos_version'] >= '0.21.0'
     yum_package "libapr1"
     yum_package "libsvn1"
   end
@@ -121,5 +121,16 @@ else
   service 'mesos-slave' do
     action [:stop, :disable]
     provider Chef::Provider::Service::Init::Redhat
+  end
+end
+
+# Edit rsyslog.conf to enable haproxy logging
+ruby_block "insert_line" do
+  block do
+    file = Chef::Util::FileEdit.new("/etc/rsyslog.conf")
+    file.insert_line_if_no_match("/$ModLoad imudp/", "$ModLoad imudp")
+    file.insert_line_if_no_match("/$UDPServerAddress 127.0.0.1/", "$UDPServerAddress 127.0.0.1")
+    file.insert_line_if_no_match("/$UDPServerRun 514/", "$UDPServerRun 514")
+    file.write_file
   end
 end

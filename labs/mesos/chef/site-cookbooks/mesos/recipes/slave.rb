@@ -3,6 +3,9 @@
 
 # Overriging default variables
 node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
+node.override['mesos']['masters'] = ENV['mesos_masters'].to_s.empty? ? node['mesos']['masters'] :  ENV['mesos_masters']
+node.override['mesos']['masters_eip'] = ENV['mesos_masters_eip'].to_s.empty? ? node['mesos']['masters_eip'] :  ENV['mesos_masters_eip']
+node.override['route53']['zone_name'] = ENV['hosted_zone_name'].to_s.empty? ? node['route53']['zone_name'] :  ENV['hosted_zone_name']
 
 # Include common stuff
 include_recipe 'mesos::common'
@@ -17,15 +20,42 @@ end
 hostname = node['mesos']['slave']['hostname']
 ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['interface']}", :private_ipv4)
 
-execute "hostname #{hostname}" do
-  only_if { node['hostname'] != hostname }
-  notifies :reload, 'ohai[reload_hostname]', :immediately
+remote_file "/usr/local/bin/haproxy-marathon-bridge" do
+  source node[:mesos][:marathon][:haproxy_bridge_url]
+  action :create
+  mode '0755'
+  not_if { ::File.exist? '/usr/local/bin/haproxy-marathon-bridge' }
 end
 
-file '/etc/hostname' do
-  content "#{hostname}\n"
-  mode '0644'
-  notifies :reload, 'ohai[reload_hostname]', :immediately
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:restart]
+end
+
+# If we are on ec2 set the public dns as the hostname so that
+# mesos slave reports work properly in the UI.
+if node.attribute?('ec2') && node['mesos']['set_ec2_hostname']
+  bash 'set-aws-public-hostname' do
+    user 'root'
+    code <<-EOH
+      PUBLIC_DNS=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
+      hostname $PUBLIC_DNS
+      echo $PUBLIC_DNS > /etc/hostname
+      HOSTNAME=$PUBLIC_DNS  # Fix the bash built-in hostname variable too
+    EOH
+    not_if 'hostname | grep ec2.internal'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
+else
+  execute "hostname #{hostname}" do
+    only_if { node['hostname'] != hostname }
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
+  file '/etc/hostname' do
+    content "#{hostname}\n"
+    mode '0644'
+    notifies :reload, 'ohai[reload_hostname]', :immediately
+  end
 end
 
 ohai 'reload_hostname' do
@@ -34,92 +64,33 @@ ohai 'reload_hostname' do
 end
 
 hostsfile_entry "#{ip_address}" do
-  hostname "#{hostname}"
+  hostname node['fqdn'] || node['machinename']
   action :append
 end
 
-# Configure mesos with zookeeper server(s)
-template '/etc/mesos/zk' do
-  source 'zk.erb'
-  variables(
-    :zk_servers => node[:mesos][:zk_servers],
-    :zookeeper_port => node[:mesos][:zookeeper_port],
-    :zookeeper_path => node[:mesos][:zookeeper_path]
-  )
-  notifies :restart, "service[mesos-slave]", :delayed
-end
+# Include slave common stuff
+include_recipe 'mesos::slave-common'
 
-# Manage slave-specific configs
-template '/etc/default/mesos' do
-  source 'mesos.erb'
+# Template route53 dns entry json payload
+template '/tmp/route53_record.json' do
+  source 'mesos-dns/route53_record.json.erb'
   variables(
-    :log_dir => node[:mesos][:log_dir],
-    :isolation_type => node[:mesos][:slave][:isolation_type]
-  )
-  notifies :restart, "service[mesos-slave]", :delayed
-end
-
-template '/etc/default/mesos-slave' do
-  source 'slave/mesos-slave.erb'
-  variables(
-    :port => node[:mesos][:port],
-    :cluster_name => node[:mesos][:cluster_name],
-    :work_dir => node[:mesos][:work_dir],
-    :isolation_type => node[:mesos][:slave][:isolation_type]
-  )
-  notifies :restart, "service[mesos-slave]", :delayed
-end
-
-if ENV['mesos_version'] >= '0.21.0'
-  env_sh_dir = '/usr/local/etc/mesos/mesos-slave-env.sh.template'
-else
-  env_sh_dir = '/usr/local/var/mesos/deploy/mesos-slave-env.sh.template'
-end
-
-template env_sh_dir do
-  source 'slave/mesos-slave-env.sh.template.erb'
-  variables(
-    :zk_servers => node[:mesos][:zk_server],
-    :zookeeper_port => node[:mesos][:zookeeper_port],
-    :zookeeper_path => node[:mesos][:zookeeper_path],
-    :log_dir => node[:mesos][:log_dir],
-    :work_dir => node[:mesos][:work_dir],
-    :isolation_type => node[:mesos][:slave][:isolation_type],
-  )
-  notifies :restart, "service[mesos-slave]", :delayed
-end
-
-# Set init to 'start' by default for mesos slave.
-# This ensures that mesos-slave is started on restart
-template '/etc/init/mesos-slave.conf' do
-  source 'slave/mesos-slave.conf.erb'
-  variables(
-    action: 'start',
+    name: "slave-#{ip_address.gsub('.', '-')}.#{node['route53']['zone_name']}",
+    value: "#{node['mesos']['masters_eip'].split(',').sample}"
   )
 end
 
-directory '/etc/mesos-slave' do
-  owner 'root'
-  mode 0755
+# Run haproxy-marathon-bridge script
+bash 'haproxy-marathon-bridge' do
+  user 'root'
+  code "haproxy-marathon-bridge install_haproxy_system #{node['mesos']['masters'].to_s.split(',').sample}:8080"
+  retries 5
+  retry_delay 10
+  not_if 'ls /etc/haproxy-marathon-bridge | grep marathons'
 end
 
-node[:mesos][:slave][:attributes].each do |opt, arg|
-  file "/etc/mesos-slave/#{opt}" do
-    content arg
-    mode 0644
-    action :create
-    notifies :restart, "service[mesos-slave]", :delayed
-  end
-end
-
-if node[:platform] == 'ubuntu'
-  service 'mesos-slave' do
-    action [:start, :enable]
-    provider Chef::Provider::Service::Upstart
-  end
-else
-  service 'mesos-slave' do
-    action [:start, :enable]
-    provider Chef::Provider::Service::Init::Redhat
-  end
+# Restart rsyslog to enable haproxy logging
+service 'rsyslog' do
+  action [:nothing]
+  subscribes :restart, "bash[haproxy-marathon-bridge]", :immediately
 end
