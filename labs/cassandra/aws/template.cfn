@@ -1,0 +1,261 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Cassandra instances for the deployment",
+    "Parameters": {
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[-_ a-zA-Z0-9]*",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "Deployment": {
+            "Description": "Deployment in which the instances belong",
+            "Type": "String"
+        },
+        "Environment": {
+            "Description": "Environment in which the instances belong",
+            "Type": "String"
+        },
+        "VpcId": {
+            "Description": "ID of the VPC",
+            "Type": "String"
+        },
+        "AvailabilityZone": {
+            "Description": "Availability zone of the subnets",
+            "Type": "String"
+        },
+        "PrivateSubnetId": {
+            "Description": "ID of the private subnet",
+            "Type": "String"
+        },
+        "NumberOfNodes": {
+            "Description": "Number of cassandra nodes to be deployed",
+            "Type": "String",
+            "Default": "1"
+        },
+        "InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "m1.small",
+            "AllowedValues": [
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m1.xlarge",
+                "m2.xlarge",
+                "m2.2xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "r3.large",
+                "r3.xlarge",
+                "r3.2xlarge",
+                "c1.medium",
+                "c1.xlarge",
+                "c3.xlarge",
+                "c3.2xlarge"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "AsgTopicArn": {
+            "Description": "Topic ARN that the auto-scaling group should use to send notifications",
+            "Type": "String"
+        },
+        "RoleName": {
+            "Description": "Name of IAM role to use with instance profile",
+            "Type": "String"
+        },
+        "Virtualization": {
+            "Description": "Virtualization type(hvm or paravirt) of image to be deployed",
+            "Type": "String"
+        }
+    },
+    "Mappings": {
+        "UbuntuTrustyAmi": {
+            "us-east-1": {
+                "hvm": "ami-cc5229a4",
+                "paravirt": "ami-d0ba0cb8"
+            }
+        }
+    },
+    "Resources": {
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [ {
+                    "Ref": "RoleName"
+                } ]
+            }
+        },
+        "LaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "UbuntuTrustyAmi",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Ref": "Virtualization"
+                        }
+                    ]
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "PrivateSecurityGroup"
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1\n\necho BEGIN\n",
+                                "\n",
+                                "INSTANCE_WAIT_HANDLE_URL=\"", { "Ref": "WaitForInstanceWaitHandle" }, "\"\n",
+                                "\n",
+                                "# Install cassandra with dependencies\napt-get update\napt-get -y install openjdk-7-jdk openjdk-7-jre\necho \"deb http://debian.datastax.com/community stable main\" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list\ncurl -L http://debian.datastax.com/debian/repo_key | sudo apt-key add -\napt-get update\napt-get -y install dsc20=2.0.11-1 cassandra=2.0.11\necho -e \"rpc_address: $(ip route get 8.8.8.8 | awk 'NR==1 {print $NF}')\" >> /etc/cassandra/cassandra.yaml\nservice cassandra restart\n\n# Notify wait handle\nWAIT_HANDLE_JSON=\"{\\\"Status\\\": \\\"SUCCESS\\\", \\\"Reason\\\": \\\"Done\\\", \\\"UniqueId\\\": \\\"1\\\", \\\"Data\\\": \\\"$INSTANCE_ID\\\"}\"\ncurl -X PUT -H 'Content-Type:' --data-binary \"$WAIT_HANDLE_JSON\" \"$INSTANCE_WAIT_HANDLE_URL\"\n\necho END\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "InstanceGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "PrivateSubnetId"
+                    }
+                ],
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AvailabilityZone"
+                    }
+                ],
+                "LaunchConfigurationName": {
+                    "Ref": "LaunchConfig"
+                },
+                "DesiredCapacity": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MinSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "MaxSize": {
+                    "Ref": "NumberOfNodes"
+                },
+                "NotificationConfiguration": {
+                    "TopicARN": {
+                        "Ref": "AsgTopicArn"
+                    },
+                    "NotificationTypes": [
+                        "autoscaling:EC2_INSTANCE_LAUNCH",
+                        "autoscaling:EC2_INSTANCE_LAUNCH_ERROR",
+                        "autoscaling:EC2_INSTANCE_TERMINATE",
+                        "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+                    ]
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                ".",
+                                [
+                                    "cassandra",
+                                    {
+                                        "Ref": "Deployment"
+                                    },
+                                    {
+                                        "Ref": "Environment"
+                                    }
+                                ]
+                            ]
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+        "PrivateSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable private access to the cassandra host, allow traffic to/from ephemeral ports and http(s) traffic",
+                "VpcId": {
+                    "Ref": "VpcId"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    },                   
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "1024",
+                        "ToPort": "65535",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "WaitForInstanceWaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle",
+            "Properties": {
+            }
+        },
+        "WaitForInstance": {
+            "Type": "AWS::CloudFormation::WaitCondition",
+            "DependsOn": "InstanceGroup",
+            "Properties": {
+                "Handle": {
+                    "Ref": "WaitForInstanceWaitHandle"
+                },
+                "Timeout": "1200"
+            }
+        }
+    }
+}
