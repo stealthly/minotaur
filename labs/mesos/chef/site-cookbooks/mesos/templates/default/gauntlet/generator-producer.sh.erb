@@ -9,7 +9,7 @@ export DATASET_MAX_LENGTH="5000"
 
 export PRODUCER_CONFIG="producer.properties"
 
-export KAFKA_CONNECT="<%= kafka_servers %>:9092"
+export KAFKA_CONNECT="<%= @kafka_servers %>:9092"
 export KAFKA_SOURCE_TOPIC="dataset"
 
 java -jar dataset-generator/build/libs/dataset-generator-1.0.jar --filename $DATASET_FILE_NAME --filesize $DATASET_SIZE --min.length $DATASET_MIN_LENGTH --max.length $DATASET_MAX_LENGTH

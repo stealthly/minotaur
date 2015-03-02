@@ -12,13 +12,13 @@ end
 template "#{node['mesos']['gauntlet']['install_dir']}/mirrormaker/consumer.config" do
   source 'mirrormaker/consumer.config.erb'
   variables(
-    zk_servers: node['mesos']['zk_servers'].sample,
+    zk_servers: node['mesos']['zk_servers'].split(',').sample,
   )
 end
 
 template '/tmp/producer.config' do
   source 'mirrormaker/producer.config.erb'
   variables(
-    kafka_servers: node['mesos']['kafka_servers'].sample,
+    kafka_servers: node['mesos']['kafka_servers'].split(',').sample,
   )
 end

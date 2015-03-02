@@ -85,15 +85,15 @@ node[:mesos][:slave][:attributes].each do |opt, arg|
 end
 
 # Include optional modules
-if ENV['mesos_dns'] == 'true'
-  include_recipe 'mesos::mesos-dns'
-  include_recipe 'mesos::mesos-dns-common'
-end
 if ENV['gauntlet'] == 'true'
   include_recipe 'mesos::gauntlet'
 end
 if ENV['mirrormaker'] == 'true'
   include_recipe 'mesos::mirrormaker'
+end
+if ENV['mesos_dns'] == 'true'
+  include_recipe 'mesos::mesos-dns'
+  include_recipe 'mesos::mesos-dns-common'
 end
 
 if node[:platform] == 'ubuntu'

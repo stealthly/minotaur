@@ -2,7 +2,7 @@
 #
 
 node.override['mesos']['zk_servers'] = ENV['zk_servers'].to_s.empty? ? node['mesos']['zk_servers'] : ENV['zk_servers']
-node.override['mesos']['spark']['tarball_url'] = ENV['spark_url'].to_s.empty? ? ['mesos']['spark']['tarball_url'] : ENV['spark_url']
+node.override['mesos']['spark']['tarball_url'] = ENV['spark_url'].to_s.empty? ? node['mesos']['spark']['tarball_url'] : ENV['spark_url']
 
 # Create working directory
 directory node[:mesos][:spark][:install_dir] do

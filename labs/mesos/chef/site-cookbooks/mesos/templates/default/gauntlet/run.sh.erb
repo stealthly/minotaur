@@ -5,11 +5,11 @@ export KAFKA_DESTINATION_TOPIC="mirror_dataset"
 export KAFKA_FETCH_SIZE="64"
 export KAFKA_NUM_TOPIC_PARTITIONS="1"
 
-export ZK_CONNECT="<%= zk_servers.split(',').join(':2181,') %>:2181"
+export ZK_CONNECT="<%= @zk_servers.split(',').join(':2181,') %>:2181"
 
 export SPARK_PATH="<%= @spark_install_dir %>"
 
-export CASSANDRA_HOST="<%= cassandra_servers %>"
+export CASSANDRA_HOST="<%= @cassandra_servers %>"
 export CASSANDRA_USER="cassandra"
 export CASSANDRA_PASSWORD="cassandra"
 
