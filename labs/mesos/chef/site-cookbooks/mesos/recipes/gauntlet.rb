@@ -25,20 +25,20 @@ end
 
 ruby_block "template run.sh" do
   block do
-    file = Chef::Util::FileEdit.new("#{node['mesos']['gauntlet']['install_dir']}/validate.sh")
+    file = Chef::Util::FileEdit.new("#{node['mesos']['gauntlet']['install_dir']}/run.sh")
     file.search_file_replace("/ZK_CONNECT=\".*\"/", "ZK_CONNECT=#{node['mesos']['zk_servers'].split(',').sample}:2181")
     file.search_file_replace("/KAFKA_CONNECT=\".*\"/", "KAFKA_CONNECT=#{node['mesos']['kafka_servers'].split(',').sample}:9092")
     file.write_file
   end
 end
 
-template "#{node['mesos']['gauntlet']['install_dir']}/run.sh" do
-  source 'gauntlet/run.sh.erb'
-  variables(
-    zk_servers: node['mesos']['zk_servers'],
-    cassandra_servers: node['mesos']['cassandra_servers'].split(',').sample,
-    spark_install_dir: node['mesos']['spark']['install_dir']
-  )
+file "#{node['mesos']['gauntlet']['install_dir']}/run.sh" do
+  action :create
+  mode '0755'
+end
+
+file "#{node['mesos']['gauntlet']['install_dir']}/validate.sh" do
+  action :create
   mode '0755'
 end
 
