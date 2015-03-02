@@ -18,7 +18,7 @@ remote_file "#{node[:mesos][:spark][:install_dir]}/spark.tar.gz" do
 end
 
 execute "extract spark" do
-  command "tar -xvzf spark.tar.gz"
+  command "tar -xvzf spark.tar.gz --strip=1"
   cwd node[:mesos][:spark][:install_dir]
   creates "#{node[:mesos][:spark][:install_dir]}/bin"
 end
