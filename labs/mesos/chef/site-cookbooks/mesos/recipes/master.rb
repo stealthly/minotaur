@@ -88,6 +88,12 @@ end
 if ENV['aurora'] == 'true'
   include_recipe 'mesos::aurora'
 end
+if ENV['spark'] == 'true'
+  include_recipe 'mesos::spark'
+end
+if ENV['gauntlet'] == 'true'
+  include_recipe 'mesos::gauntlet'
+end
 
 # Configure mesos with zookeeper server(s)
 template '/etc/mesos/zk' do

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+export MASTER=mesos://zk://<%= @zk_servers.split(',').join(':2181,') %>:2181/mesos
+export MESOS_NATIVE_LIBRARY=/usr/local/lib/libmesos.so
+export SPARK_EXECUTOR_URI=<%= @spark_url %>
