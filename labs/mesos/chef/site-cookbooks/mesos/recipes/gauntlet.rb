@@ -7,8 +7,15 @@ node.override['mesos']['kafka_servers'] = ENV['kafka_servers'].to_s.empty? ? nod
 
 git node['mesos']['gauntlet']['install_dir'] do
   repository "git@github.com:stealthly/gauntlet.git"
-  revision "poison_pill"
+  revision "master"
   action :sync
+end
+
+bash 'checkout to development repository' do
+  user 'root'
+  cwd node['mesos']['gauntlet']['install_dir']
+  code "git checkout -b poison_pill origin/poison_pill"
+  not_if "git status | grep poison_pill", :cwd => node['mesos']['gauntlet']['install_dir']
 end
 
 ruby_block "template validate.sh" do
