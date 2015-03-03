@@ -6,8 +6,7 @@ node.override['mesos']['cassandra_servers'] = ENV['cassandra_servers'].to_s.empt
 node.override['mesos']['kafka_servers'] = ENV['kafka_servers'].to_s.empty? ? node['mesos']['kafka_servers'] : ENV['kafka_servers']
 
 git node['mesos']['gauntlet']['install_dir'] do
-  repository "git@github.com:stealthly/gauntlet.git"
-  revision "master"
+  repository "http://github.com/stealthly/gauntlet"
   action :sync
 end
 
@@ -54,12 +53,4 @@ template "#{node['mesos']['gauntlet']['install_dir']}/producer.properties" do
   variables(
     kafka_servers: node['mesos']['kafka_servers'].split(',').sample,
   )
-end
-
-template "#{node['mesos']['gauntlet']['install_dir']}/generator-producer.sh" do
-  source 'gauntlet/generator-producer.sh.erb'
-  variables(
-    kafka_servers: node['mesos']['kafka_servers'].split(',').sample,
-  )
-  mode '0755'
 end
