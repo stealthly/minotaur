@@ -9,16 +9,16 @@ remote_file "/usr/local/bin/mirror_maker" do
   source node[:mesos][:mirrormaker][:bin_url]
 end
 
-template "#{node['mesos']['gauntlet']['install_dir']}/mirrormaker/consumer.config" do
+template "/tmp/consumer.config" do
   source 'mirrormaker/consumer.config.erb'
   variables(
-    zk_servers: node['mesos']['zk_servers'].split(',').sample,
+    zk_servers: node['mesos']['zk_servers'],
   )
 end
 
 template '/tmp/producer.config' do
   source 'mirrormaker/producer.config.erb'
   variables(
-    kafka_servers: node['mesos']['kafka_servers'].split(',').sample,
+    kafka_servers: node['mesos']['kafka_servers'],
   )
 end

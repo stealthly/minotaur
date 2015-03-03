@@ -1,1 +1,1 @@
-zookeeper.connect=<%= @zk_servers %>:2181
+zookeeper.connect=<%= @zk_servers.split(',').join(':2181,') %>:2181

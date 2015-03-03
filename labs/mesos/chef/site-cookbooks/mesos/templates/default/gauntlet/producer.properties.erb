@@ -1,1 +1,1 @@
-metadata.broker.list=<%= @kafka_servers %>
+metadata.broker.list=<%= @kafka_servers.split(',').join(':9092,') %>:9092

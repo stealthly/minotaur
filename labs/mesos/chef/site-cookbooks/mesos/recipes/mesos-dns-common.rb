@@ -5,7 +5,7 @@
 ruby_block "insert_line" do
   block do
     file = Chef::Util::FileEdit.new("/etc/resolvconf/resolv.conf.d/head")
-    file.insert_line_if_no_match("/nameserver 127.0.0.1/", "nameserver 127.0.0.1")
+    file.insert_line_if_no_match(/nameserver 127.0.0.1/, "nameserver 127.0.0.1")
     file.write_file
   end
 end
