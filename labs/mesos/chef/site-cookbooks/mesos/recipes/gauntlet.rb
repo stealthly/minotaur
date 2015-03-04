@@ -14,7 +14,7 @@ ruby_block "template validate.sh" do
   block do
     file = Chef::Util::FileEdit.new("#{node['mesos']['gauntlet']['install_dir']}/validate.sh")
     file.search_file_replace(/export SPARK_PATH.*/, "export SPARK_PATH=\"#{node['mesos']['spark']['install_dir']}\"")
-    file.search_file_replace(/export MESOS_MASTER_URL.*/, "export SPARK_MASTER_URL=\"#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181\"")
+    file.search_file_replace(/export SPARK_MASTER_URL.*/, "export SPARK_MASTER_URL=\"mesos://zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos\"")
     file.search_file_replace(/export CASSANDRA_HOST.*/, "export CASSANDRA_HOST=\"#{node['mesos']['cassandra_master']}\"")
     file.search_file_replace(/export ZK_CONNECT.*/, "export ZK_CONNECT=\"#{node['mesos']['zk_servers'].split(',').sample}:2181\"")
     file.search_file_replace(/export KAFKA_CONNECT.*/, "export KAFKA_CONNECT=\"#{node['mesos']['kafka_servers'].split(',').sample}:9092\"")
