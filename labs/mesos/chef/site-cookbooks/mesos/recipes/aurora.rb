@@ -28,7 +28,7 @@ execute "extract aurora" do
 end
 
 file "#{node[:mesos][:aurora][:install_dir]}/aurora.tar" do
-    action :delete
+  action :delete
 end
 
 # Initializing log
@@ -36,7 +36,6 @@ execute "initialize log" do
   command "mesos-log initialize --path=#{node[:mesos][:aurora][:install_dir]}/db"
   not_if { ::File.directory?("#{node[:mesos][:aurora][:install_dir]}/db")}
 end
-
 
 # Configure mesos with zookeeper server(s)
 template "#{node[:mesos][:aurora][:install_dir]}/aurora-scheduler.sh" do

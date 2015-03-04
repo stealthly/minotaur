@@ -70,6 +70,11 @@ slave_ip_address = IPFinder.find_by_interface(node, "#{node['mesos']['slave']['i
 node.override[:mesos][:slave][:attributes][:ip] = slave_ip_address
 node.override[:mesos][:slave][:attributes][:hostname] = "slave-#{slave_ip_address.gsub('.', '-')}.#{node['route53']['zone_name']}"
 
+hostsfile_entry "#{slave_ip_address}" do
+  hostname node[:mesos][:slave][:attributes][:hostname]
+  action :append
+end
+
 node[:mesos][:slave][:attributes].each do |opt, arg|
   file "/etc/mesos-slave/#{opt}" do
     content arg
@@ -79,6 +84,13 @@ node[:mesos][:slave][:attributes].each do |opt, arg|
   end
 end
 
+# Include optional modules
+if ENV['gauntlet'] == 'true'
+  include_recipe 'mesos::gauntlet'
+end
+if ENV['mirrormaker'] == 'true'
+  include_recipe 'mesos::mirrormaker'
+end
 if ENV['mesos_dns'] == 'true'
   include_recipe 'mesos::mesos-dns'
   include_recipe 'mesos::mesos-dns-common'

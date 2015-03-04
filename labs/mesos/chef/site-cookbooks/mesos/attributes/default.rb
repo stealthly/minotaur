@@ -48,6 +48,14 @@ default[:mesos][:aurora][:http_port] = 8081
 default[:mesos][:dns][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/mesos/mesos-dns/mesos-dns"
 default[:mesos][:dns][:install_dir] = '/usr/local/mesos-dns'
 
+default[:mesos][:spark][:install_dir] = '/opt/spark'
+default[:mesos][:spark][:version] = '1.2.1'
+default[:mesos][:spark][:tarball_url] = "https://dist.apache.org/repos/dist/release/spark/spark-#{node[:mesos][:spark][:version]}/spark-#{node[:mesos][:spark][:version]}-bin-cdh4.tgz"
+
+default[:mesos][:mirrormaker][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/kafka/mirrormaker/mirror_maker"
+
+default[:mesos][:gauntlet][:install_dir] = '/opt/gauntlet'
+
 default[:java][:jdk_version] = '7'
 
 default[:mesos][:zk_servers] = nil

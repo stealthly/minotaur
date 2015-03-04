@@ -31,6 +31,8 @@ echo BEGIN
 #HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
 #HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
 #MESOS_DNS="{ "Ref": "MesosDns" }"
+#GAUNTLET="{ "Ref": "Gauntlet" }",
+#MIRRORMAKER="{ "Ref": "Mirrormaker" }",
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -71,6 +73,12 @@ gem install /tmp/librarian-0.1.2.gem --no-ri --no-rdoc
 gem install bundler --no-ri --no-rdoc
 cd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install
 
+# Find mesos masters to configure mesos dns as default dns
+NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
+MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+QUERY="Reservations[].Instances[].PublicIpAddress"
+MESOS_MASTERS_EIP=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+
 # Find zookeeper nodes that belong to the same deployment and environment
 NODES_FILTER="Name=tag:Name,Values=zookeeper.$DEPLOYMENT.$ENVIRONMENT"
 QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
@@ -82,11 +90,11 @@ if [ -z "$ZK_SERVERS" ]; then
     ZK_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 fi
 
-# Find mesos masters to configure mesos dns as default dns
-NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
-MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
-QUERY="Reservations[].Instances[].PublicIpAddress"
-MESOS_MASTERS_EIP=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+# Find kafka and cassandra nodes that belong to the same deployment and environment
+NODES_FILTER="Name=tag:Name,Values=cassandra.$DEPLOYMENT.$ENVIRONMENT"
+CASSANDRA_MASTER=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+NODES_FILTER="Name=tag:Name,Values=kafka.$DEPLOYMENT.$ENVIRONMENT"
+KAFKA_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 
 # Fix chef-solo bug(absence of ec2 hint)
 mkdir -p /etc/chef/ohai/hints
@@ -96,10 +104,14 @@ touch /etc/chef/ohai/hints/ec2.json
 mesos_version="$MESOS_VERSION" \
 zk_version="$ZK_VERSION" \
 zk_servers="$ZK_SERVERS" \
+cassandra_master="$CASSANDRA_MASTER" \
+kafka_servers="$KAFKA_SERVERS" \
 mesos_masters="$MESOS_MASTERS" \
 mesos_masters_eip="$MESOS_MASTERS_EIP" \
 hosted_zone_name="$HOSTED_ZONE_NAME" \
 mesos_dns="$MESOS_DNS" \
+gauntlet="$GAUNTLET" \
+mirrormaker="$MIRRORMAKER" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_slave.json"
 
 # Create route53 dns entry

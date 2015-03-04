@@ -4,17 +4,19 @@ This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin 
 
 ## Usage
 ```
-usage: minotaur lab deploy mesos master [-h] [--debug] [--mesos-dns] -e ENVIRONMENT -d
-                                        DEPLOYMENT -r REGION -z AVAILABILITY_ZONE -o
-                                        HOSTED_ZONE [-n NUM_NODES] [-i INSTANCE_TYPE]
-                                        [-m MESOS_VERSION] [-v ZK_VERSION] [-a AURORA_URL]
-                                        [-t MARATHON_VERSION] [--marathon] [--aurora]
-                                        [--slave-on-master]
+usage: minotaur lab deploy mesos master [-h] [--debug] [--mesos-dns] [--gauntlet] -e
+                                        ENVIRONMENT -d DEPLOYMENT -r REGION -z
+                                        AVAILABILITY_ZONE -o HOSTED_ZONE [-n NUM_NODES]
+                                        [-i INSTANCE_TYPE] [-m MESOS_VERSION] [-v ZK_VERSION]
+                                        [-a AURORA_URL] [-t MARATHON_VERSION]
+                                        [-s SPARK_VERSION] [--spark-url SPARK_URL] [--marathon]
+                                        [--aurora] [--slave-on-master] [--spark]
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Enable debug mode
   --mesos-dns           Use this flag to deploy Mesos-DNS on Marathon
+  --gauntlet            Use this flag to deploy Gauntlet framework
   -e ENVIRONMENT, --environment ENVIRONMENT
                         CloudFormation environment to deploy to
   -d DEPLOYMENT, --deployment DEPLOYMENT
@@ -37,21 +39,27 @@ optional arguments:
                         The Aurora scheduler URL
   -t MARATHON_VERSION, --marathon-version MARATHON_VERSION
                         The Marathon version to deploy
+  -s SPARK_VERSION, --spark-version SPARK_VERSION
+                        The Spark version to deploy
+  --spark-url SPARK_URL
+                        URL of custom Spark binaries tarball
   --marathon            Use this flag to deploy Marathon framework
   --aurora              Use this flag to deploy Aurora framework
   --slave-on-master     Use this flag to deploy Mesos slaves on master nodes
+  --spark               Use this flag to deploy Spark framework
 ```
 
 ```
-usage: minotaur lab deploy mesos slave [-h] [--debug] [--mesos-dns] -e ENVIRONMENT -d
-                                       DEPLOYMENT -r REGION -z AVAILABILITY_ZONE -o HOSTED_ZONE
-                                       [-n NUM_NODES] [-i INSTANCE_TYPE] [-m MESOS_VERSION]
-                                       [-v ZK_VERSION]
+usage: minotaur lab deploy mesos slave [-h] [--debug] [--mesos-dns] [--gauntlet] -e ENVIRONMENT
+                                       -d DEPLOYMENT -r REGION -z AVAILABILITY_ZONE -o
+                                       HOSTED_ZONE [-n NUM_NODES] [-i INSTANCE_TYPE]
+                                       [-m MESOS_VERSION] [-v ZK_VERSION] [--mirrormaker]
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Enable debug mode
   --mesos-dns           Use this flag to deploy Mesos-DNS on Marathon
+  --gauntlet            Use this flag to deploy Gauntlet framework
   -e ENVIRONMENT, --environment ENVIRONMENT
                         CloudFormation environment to deploy to
   -d DEPLOYMENT, --deployment DEPLOYMENT
@@ -70,6 +78,7 @@ optional arguments:
                         The Mesos version to deploy
   -v ZK_VERSION, --zk-version ZK_VERSION
                         The Zookeeper version to deploy
+  --mirrormaker         Use this flag to deploy Mirrormaker
 ```
 
 **Mandatory arguments:**
@@ -96,9 +105,11 @@ optional arguments:
 
 `[marathon version]` defaults to 0.7.5
 
-`[modules]` defaults to marathon
-
 `[aurora url]` defaults to https://s3.amazonaws.com/bdoss-deploy/mesos/aurora/aurora-scheduler-0.6.1.tar
+
+`[spark version]` defaults to 1.2.1
+
+`[spark url]` defaults to https://dist.apache.org/repos/dist/release/spark/spark-1.2.1/spark-1.2.1-bin-cdh4.tgz
 
 **Example:**
 
@@ -119,3 +130,29 @@ After pushing master node to CFN, I'd recommend waiting a minute or two before p
 If you want to remove your deployment - just delete a corresponding CloudFormation stack in AWS Web Console.
 
 *NOTICE:* DNS entries in aws route53 will STAY there even after stack termination, so be sure to delete them manually using aws cli or aws route53 web ui after stack termination.
+
+*NOTICE:* Currently only corse mode is supported in spark framework on mesos.
+
+To run kafka test framework ssh to master instance and run the following, e.g.
+```
+cd /opt/gauntlet
+./gradlew jar
+./validate.sh --kafka.source.topic dataset --kafka.destination.topic mirror_dataset --kafka.fetch.size 64 --kafka.partitions 1
+```
+
+To run kafka producer, generator and some custom client launch command go to marathon web ui (e.g. master0.bdoss.org:8080) and create new task with following code in command field
+`cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner "mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\"^$KAFKA_TOPIC\""`
+
+Or create temporary json payload file(e.g. /tmp/run.json) with following content
+```
+{
+  "id": "producer",
+  "cmd": "cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner \"mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\\\"^$KAFKA_TOPIC\\\"\"",
+  "instances": 1,
+  "cpus": 1,
+  "mem": 1024
+}
+```
+
+And post it to marathon
+`curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/run.json`

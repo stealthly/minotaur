@@ -36,6 +36,10 @@ echo BEGIN
 #ZK_VERSION="{ "Ref": "ZookeeperVersion" }"
 #HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
 #HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
+#SPARK="{ "Ref": "Spark" }"
+#SPARK_VERSION="{ "Ref": "SparkVersion" }"
+#SPARK_URL="{ "Ref": "SparkUrl" }"
+#GAUNTLET="{ "Ref": "Gauntlet" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -87,6 +91,12 @@ NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
 MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 MESOS_MASTERS_EIP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
 
+# Find kafka and cassandra nodes that belong to the same deployment and environment
+NODES_FILTER="Name=tag:Name,Values=cassandra.$DEPLOYMENT.$ENVIRONMENT"
+CASSANDRA_MASTER=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+NODES_FILTER="Name=tag:Name,Values=kafka.$DEPLOYMENT.$ENVIRONMENT"
+KAFKA_SERVERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
+
 # Fix chef-solo bug(absence of ec2 hint)
 mkdir -p /etc/chef/ohai/hints
 touch /etc/chef/ohai/hints/ec2.json
@@ -103,7 +113,13 @@ mesos_masters="$MESOS_MASTERS" \
 mesos_masters_eip="$MESOS_MASTERS_EIP" \
 hosted_zone_name="$HOSTED_ZONE_NAME" \
 zk_servers="$ZK_SERVERS" \
+cassandra_master="$CASSANDRA_MASTER" \
+kafka_servers="$KAFKA_SERVERS" \
 aurora_url="$AURORA_URL" \
+spark="$SPARK" \
+spark_version="$SPARK_VERSION" \
+spark_url="$SPARK_URL" \
+gauntlet="$GAUNTLET" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_master.json"
 
 # Create route53 dns entry

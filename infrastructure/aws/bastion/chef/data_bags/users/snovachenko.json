@@ -1,0 +1,6 @@
+{
+  "id"        : "snovachenko",
+  "comment"   : "Serhey Novachenko",
+  "ssh_keys"  : ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCs+zwYCDQiDEngfRMyhgWQ0ylJSufpTomtKD64MM+nH8nEuQ+bCDU3j29hAywrqusNPcgXVM7kSWe/i1QstNRSHImK+rNsIFIZoAE1N3Qvme9WWHZ8FJucKE7PmcmXvtvqG9l03+e4MAzOQHGFO8LR3jkKt0VVmWsMCkSmi0A8RdJsqj9AH5nZT0DDyQyqitrtCDiYDuhqI59wn5gPTSJx34829ZdFYFDkNObO1e/GhXG50s6MrRN3Rcb0EyI13w6RsYuuZyCMT0m4VdxVRWl4gBAcW8Xpv2NnGJOhGjQ/kc6DKq5bYZ3LgjcumODfsAgK9hQJzg07NpuFcFVC3W/Z snovachenko@snovachenko"],
+  "environments": ["vagrant","bdoss-dev"]
+}
