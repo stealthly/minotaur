@@ -50,7 +50,7 @@ default[:mesos][:dns][:install_dir] = '/usr/local/mesos-dns'
 
 default[:mesos][:spark][:install_dir] = '/opt/spark'
 default[:mesos][:spark][:version] = '1.2.1'
-default[:mesos][:spark][:tarball_url] = "http://d3kbcqa49mib13.cloudfront.net/spark-#{node[:mesos][:spark][:version]}-bin-hadoop2.4.tgz"
+default[:mesos][:spark][:tarball_url] = "https://dist.apache.org/repos/dist/release/spark/spark-#{node[:mesos][:spark][:version]}/spark-#{node[:mesos][:spark][:version]}-bin-cdh4.tgz"
 
 default[:mesos][:mirrormaker][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/kafka/mirrormaker/mirror_maker"
 

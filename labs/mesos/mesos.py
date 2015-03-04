@@ -81,7 +81,7 @@ parser_master.add_argument('--debug', action='store_true', help='Enable debug mo
 parser_master.add_argument('--mesos-dns', default='false', action='store_const', const='true',
                            help='Use this flag to deploy Mesos-DNS on Marathon')
 parser_master.add_argument('--gauntlet', default='false', action='store_const', const='true',
-                           help='Use this flag to deploy Mesos-DNS on Marathon')
+                           help='Use this flag to deploy Gauntlet framework')
 parser_master.add_argument('-e', '--environment', required=True, help='CloudFormation environment to deploy to')
 parser_master.add_argument('-d', '--deployment', required=True, help='Unique name for the deployment')
 parser_master.add_argument('-r', '--region', required=True, help='Geographic area to deploy to')
@@ -96,7 +96,7 @@ parser_slave.add_argument('--mirrormaker', default='false', action='store_const'
                            help='Use this flag to deploy Mirrormaker')
 parser_master.add_argument('-a', '--aurora-url', default='', help='The Aurora scheduler URL')
 parser_master.add_argument('-t', '--marathon-version', default='0.7.5', help='The Marathon version to deploy')
-parser_master.add_argument('-s', '--spark-version', default='1.2.0', help='The Spark version to deploy')
+parser_master.add_argument('-s', '--spark-version', default='1.2.1', help='The Spark version to deploy')
 parser_master.add_argument('--spark-url', default='', help='URL of custom Spark binaries tarball')
 parser_master.add_argument('--marathon', default='false', action='store_const', const='true',
                            help='Use this flag to deploy Marathon framework')
