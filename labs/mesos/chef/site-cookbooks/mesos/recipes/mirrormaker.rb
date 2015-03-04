@@ -7,6 +7,7 @@ node.override['mesos']['kafka_servers'] = ENV['kafka_servers'].to_s.empty? ? nod
 remote_file "/usr/local/bin/mirror_maker" do
   action :create_if_missing
   source node[:mesos][:mirrormaker][:bin_url]
+  mode 0755
 end
 
 template "/tmp/consumer.config" do
