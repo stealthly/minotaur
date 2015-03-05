@@ -76,10 +76,8 @@ log.cleanup.interval.mins=1
 
 ############################# Zookeeper #############################
 <% if @zk_servers.nil? %>
-    <% @zk_servers = ['127.0.0.1'] %>
-<% else %>
-    <% @zk_servers = @zk_servers.split(',') %>
+    <% @zk_servers = '127.0.0.1' %>
 <% end %>
 
 # Zk connection string (see zk docs for details).
-zookeeper.connect=<% @zk_servers.each do |server| %><%= server %>:2181,<% end %>
+zookeeper.connect=<%= @zk_servers.split(',').join(':2181,') %>:2181

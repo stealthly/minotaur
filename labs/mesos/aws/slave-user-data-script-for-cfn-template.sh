@@ -75,6 +75,7 @@ cd $REPO_DIR/$LAB_PATH/chef/ && bundle install && librarian-chef install
 
 # Find mesos masters to configure mesos dns as default dns
 NODES_FILTER="Name=tag:Name,Values=mesos-master.$DEPLOYMENT.$ENVIRONMENT"
+QUERY="Reservations[].Instances[].NetworkInterfaces[].PrivateIpAddress"
 MESOS_MASTERS=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
 QUERY="Reservations[].Instances[].PublicIpAddress"
 MESOS_MASTERS_EIP=$(aws ec2 describe-instances --region "$REGION" --filters "$NODES_FILTER" --query "$QUERY" | jq --raw-output 'join(",")')
