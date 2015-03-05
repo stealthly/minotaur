@@ -21,7 +21,11 @@ config_path = ::File.join(node[:zookeeper][:install_dir],
                           'conf',
                           'zoo.cfg')
 
-node.override['zookeeper']['checksum'] = `curl -kL #{zookeeper_uri}.md5 2>/dev/null | awk '{print $1}'`
+if node['zookeeper']['version'] == '3.3.6'
+  node.override['zookeeper']['checksum'] = 'eb311ec0479a9447d075a20350ecfc5cf6a2a6d9842d13b59d7548430ac37521'
+elsif node['zookeeper']['version'] == '3.5.0-alpha'
+  node.override['zookeeper']['checksum'] = '87814f3afa9cf846db8d7e695e82e11480f7b19d79d8f146e58c4aefb4289bf4'
+end
 
 # Get zookeeper servers either from ENV or from chef environment provided by knife
 # Must be in a form of comma-separated list
