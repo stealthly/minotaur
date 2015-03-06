@@ -96,4 +96,8 @@ VOLUME ["/deploy"]
 # Cleaning up APT when done
 # RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN apt-get update
+RUN apt-get install -y ntp
+RUN /usr/sbin/ntpdate 0.ubuntu.pool.ntp.org && service ntp start
+
 WORKDIR /deploy
