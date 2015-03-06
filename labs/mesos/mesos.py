@@ -90,7 +90,8 @@ parser_master.add_argument('-o', '--hosted-zone', required=True, help='The name 
 parser_master.add_argument('-n', '--num-nodes', type=int, default=1, help='Number of instances to deploy')
 parser_master.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
 parser_master.add_argument('-m', '--mesos-version', default='0.21.0', help='The Mesos version to deploy')
-parser_master.add_argument('-v', '--zk-version', default='3.4.6', help='The Zookeeper version to deploy')
+parser_master.add_argument('-v', '--zk-version', default='3.4.6', choices=['3.3.6', '3.4.6', '3.5.0-alpha'],
+                           help='The Zookeeper version to deploy')
 parser_slave = subparsers_mesos.add_parser(name="slave", add_help=False, parents=[parser_master])
 parser_slave.add_argument('--mirrormaker', default='false', action='store_const', const='true',
                            help='Use this flag to deploy Mirrormaker')

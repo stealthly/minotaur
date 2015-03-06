@@ -59,7 +59,7 @@ parser.add_argument('-r', '--region', required=True, help='Geographic area to de
 parser.add_argument('-z', '--availability-zone', required=True, help='Isolated location to deploy to')
 parser.add_argument('-n', '--num-nodes', type=int, default=1, help='Number of instances to deploy')
 parser.add_argument('-i', '--instance-type', default='m1.small', help='AWS EC2 instance type to deploy')
-parser.add_argument('-v', '--zk-version', default='3.4.6', help='The Zookeeper version to deploy')
+parser.add_argument('-v', '--zk-version', default='3.4.6', choices=['3.3.6', '3.4.6', '3.5.0-alpha'], help='The Zookeeper version to deploy')
 
 def main(parser):
     args, unknown = parser.parse_known_args()
