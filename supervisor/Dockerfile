@@ -96,8 +96,12 @@ VOLUME ["/deploy"]
 # Cleaning up APT when done
 # RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Setting up ntp
 RUN apt-get update
 RUN apt-get install -y ntp
 RUN /usr/sbin/ntpdate 0.ubuntu.pool.ntp.org && service ntp start
+
+# Turn off syslog-to-docker-logs forwarder
+RUN touch /etc/service/syslog-forwarder/down
 
 WORKDIR /deploy

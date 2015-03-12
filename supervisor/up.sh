@@ -20,8 +20,8 @@ CONTAINER_NAME="supervisor"
 # Handle container start on ssh in Vagrant
 SUPERVISOR_PATH="."
 if [[ $(whoami) = "vagrant" ]]; then
-SUPERVISOR_PATH="/deploy/supervisor"
-cd $SUPERVISOR_PATH
+  SUPERVISOR_PATH="/deploy/supervisor"
+  cd $SUPERVISOR_PATH
 fi
 
 echo "Building ..."
