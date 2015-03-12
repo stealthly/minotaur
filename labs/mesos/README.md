@@ -136,32 +136,32 @@ If you want to remove your deployment - just delete a corresponding CloudFormati
 To run kafka test framework:
 
 1. Create topics in kafka: ssh into kafka instance and run the following, e.g.
-```
-/opt/apache/kafka/bin/kafka-topics.sh --create --topic dataset --partitions 1 --replication-factor 1 --zookeeper $ZOOKEEPER_SERVER
-/opt/apache/kafka/bin/kafka-topics.sh --create --topic mirror_dataset --partitions 1 --replication-factor 1 --zookeeper $ZOOKEEPER_SERVER
-```
+  ```
+  /opt/apache/kafka/bin/kafka-topics.sh --create --topic dataset --partitions 1 --replication-factor 1 --zookeeper $ZOOKEEPER_SERVER
+  /opt/apache/kafka/bin/kafka-topics.sh --create --topic mirror_dataset --partitions 1 --replication-factor 1 --zookeeper $ZOOKEEPER_SERVER
+  ```
 
 2. Run kafka producer, generator and some custom client launch command: go to marathon web ui (e.g. master0.bdoss.org:8080) and create a new task with the following code in a command field
 
-`cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner "mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\"^dataset\""`
+  `cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner "mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\"^dataset\""`
 
-or create a temporary json payload file(e.g. /tmp/run.json) with the following content
-```
-{
-  "id": "producer",
-  "cmd": "cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner \"mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\\\"^dataset\\\"\"",
-  "instances": 1,
-  "cpus": 1,
-  "mem": 1024
-}
-```
+  or create a temporary json payload file(e.g. /tmp/run.json) with the following content
+  ```
+  {
+    "id": "producer",
+    "cmd": "cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner \"mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\\\"^dataset\\\"\"",
+    "instances": 1,
+    "cpus": 1,
+    "mem": 1024
+  }
+  ```
 
-and post it to marathon
-`curl -X POST -H "Content-Type: application/json" http://${MESOS_MASTER}:8080/v2/apps -d@/tmp/run.json`
+  and post it to marathon
+  `curl -X POST -H "Content-Type: application/json" http://${MESOS_MASTER}:8080/v2/apps -d@/tmp/run.json`
 
 3. Run test framework: ssh to master instance and run the following, e.g.(Dont forget to change --executor-memory and --total-executor-cores settings in validate.sh). You will need at least 12G memory on slave and 4 cores to process it.
-```
-cd /opt/gauntlet
-./gradlew jar
-./validate.sh --kafka.source.topic dataset --kafka.destination.topic mirror_dataset --kafka.fetch.size 64 --kafka.partitions 1 &
-```
+  ```
+  cd /opt/gauntlet
+  ./gradlew jar
+  ./validate.sh --kafka.source.topic dataset --kafka.destination.topic mirror_dataset --kafka.fetch.size 64 --kafka.partitions 1 &
+  ```
