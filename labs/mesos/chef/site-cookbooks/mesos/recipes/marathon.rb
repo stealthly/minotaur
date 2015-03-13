@@ -37,12 +37,11 @@ when 'rhel', 'centos', 'amazon'
   end
 end
 
-# Set configuration with environmental attributes
-node[:mesos][:marathon][:attributes].each do |opt, arg|
-  ENV["MARATHON_#{opt.upcase}"] = arg
-end
-
 service 'marathon' do
+  # Set configuration with environmental attributes
+  node[:mesos][:marathon][:attributes].each do |opt, arg|
+    ENV["MARATHON_#{opt.upcase}"] = arg
+  end
   action [ :enable, :start ]
   subscribes :restart, "service[mesos-master]", :delayed
 end

@@ -95,6 +95,9 @@ if ENV['mesos_dns'] == 'true'
   include_recipe 'mesos::mesos-dns'
   include_recipe 'mesos::mesos-dns-common'
 end
+if ENV['spark'] == 'true'
+  include_recipe 'mesos::spark'
+end
 
 if node[:platform] == 'ubuntu'
   service 'mesos-slave' do
