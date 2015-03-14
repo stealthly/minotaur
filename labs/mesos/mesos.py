@@ -27,7 +27,8 @@ else:
 class Mesos(Lab):
     def __init__(self, environment, deployment, region, zone, zone_name, instance_count, instance_type,
                  mesos_version, zk_version, node, mesos_dns, gauntlet, aurora_url='', marathon_version='',
-                 marathon='', aurora='', slave_on_master='', spark='', spark_version='', spark_url='', mirrormaker=''):
+                 marathon='', aurora='', slave_on_master='', spark='', spark_version='', spark_url='',
+                 chronos='', mirrormaker=''):
         super(Mesos, self).__init__(environment, deployment, region, zone,
                                     template="-".join([node,'template.cfn']))
         vpc_id = self.get_vpc(environment).id
@@ -70,6 +71,7 @@ class Mesos(Lab):
             self.parameters.append(("Spark",           spark))
             self.parameters.append(("SparkVersion",    spark_version))
             self.parameters.append(("SparkUrl",        spark_url))
+            self.parameters.append(("Chronos",         chronos))
         elif node == "slave":
             self.parameters.append(("Mirrormaker",     mirrormaker))
 
@@ -107,6 +109,8 @@ parser_master.add_argument('--slave-on-master', default='false', action='store_c
                            help='Use this flag to deploy Mesos slaves on master nodes')
 parser_master.add_argument('--spark', default='false', action='store_const', const='true',
                            help='Use this flag to deploy Spark framework')
+parser_master.add_argument('--chronos', default='false', action='store_const', const='true',
+                           help='Use this flag to deploy Chronos framework')
 
 def main(parser):
     args, unknown = parser.parse_known_args()
@@ -115,7 +119,8 @@ def main(parser):
         lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, args.hosted_zone,
                     str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version,
                     args.mesos, args.mesos_dns, args.gauntlet, args.aurora_url, args.marathon_version,
-                    args.marathon, args.aurora, args.slave_on_master, args.spark, args.spark_version, args.spark_url)
+                    args.marathon, args.aurora, args.slave_on_master, args.spark, args.spark_version,
+                    args.spark_url, args.chronos)
     elif args.mesos == 'slave':
         lab = Mesos(args.environment, args.deployment, args.region, args.availability_zone, args.hosted_zone,
                     str(args.num_nodes), args.instance_type, args.mesos_version, args.zk_version,
