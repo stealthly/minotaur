@@ -35,9 +35,10 @@ end
 
 # Template gauntlet(validate.sh) task payload for chronos
 template '/tmp/gauntlet.json' do
-  source 'gauntlet/gauntlet.json.erb'
+  source 'chronos/gauntlet.json.erb'
   variables(
     gauntlet_install_dir: node['mesos']['gauntlet']['install_dir'],
+    time: `date -Is --date 'now + 15 mins'`.strip
 )
 end
 
