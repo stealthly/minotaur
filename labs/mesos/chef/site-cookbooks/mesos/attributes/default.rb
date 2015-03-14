@@ -56,6 +56,8 @@ default[:mesos][:chronos][:tarball_url] = "#{node[:mesos][:mirror]}chronos/chron
 default[:mesos][:chronos][:install_dir] = "/opt/chronos"
 default[:mesos][:chronos][:log_dir] = "/var/log/chronos"
 default[:mesos][:chronos][:port] = 8081
+default[:mesos][:chronos][:java_heap] = "#{(node['memory']['total'].to_i - (node['memory']['total'].to_i / 2)) / 1024}m"
+default[:mesos][:chronos][:user] = 'root'
 
 default[:mesos][:mirrormaker][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/kafka/mirrormaker/mirror_maker"
 

@@ -45,10 +45,8 @@ end
 runit_service 'chronos' do
   default_logger true
   options({
-    :chronos_home => node[:mesos][:chronos][:install_dir],
     :mesos_home => "/usr/local/lib",
-    :extra_opts => "-cp $chronos_jar_file com.airbnb.scheduler.Main \
---master zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
+    :extra_opts => "--master zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
 --zk_hosts zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
 --http_port #{node['mesos']['chronos']['port']}"}.merge(params)
   )
