@@ -11,6 +11,12 @@ directory node[:mesos][:chronos][:install_dir] do
   recursive true
 end
 
+directory "#{node[:mesos][:chronos][:install_dir]}/environment" do
+  owner "root"
+  group "root"
+  recursive true
+end
+
 directory node[:mesos][:chronos][:log_dir] do
   owner "root"
   group "root"
