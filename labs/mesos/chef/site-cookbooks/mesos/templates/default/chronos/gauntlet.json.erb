@@ -1,6 +1,6 @@
 {
   "command": "cd <%= @gauntlet_install_dir %> && ./gradlew jar && ./validate.sh --kafka.source.topic dataset --kafka.destination.topic mirror_dataset --kafka.fetch.size 64 --kafka.partitions 1",
-  "schedule": "R1/<%= @time %>>/PT30m",
+  "schedule": "R1/<%= @time %>/PT30m",
   "name": "gauntlet",
   "epsilon": "PT1M",
   "shell": true,
