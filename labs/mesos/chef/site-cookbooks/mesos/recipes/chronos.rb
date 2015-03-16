@@ -44,7 +44,8 @@ template '/tmp/gauntlet.json' do
   source 'chronos/gauntlet.json.erb'
   variables(
     gauntlet_install_dir: node['mesos']['gauntlet']['install_dir'],
-    time: `date -Is --date 'now + 15 mins'`.strip
+    time: `date -Is --date 'now + 30 mins'`.strip,
+    master_ip: node['mesos']['masters'].split(',').sample
 )
 end
 
@@ -52,7 +53,8 @@ runit_service 'chronos' do
   default_logger true
   options({
     :mesos_home => "/usr/local/lib",
-    :extra_opts => "--master zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
+    :extra_opts => "--mesos_task_cpu 1.0 --mesos_task_mem 1024 --mesos_task_disk 1024 \
+--master zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
 --zk_hosts zk://#{node['mesos']['zk_servers'].split(',').join(':2181,')}:2181/mesos \
 --http_port #{node['mesos']['chronos']['port']}"}.merge(params)
   )

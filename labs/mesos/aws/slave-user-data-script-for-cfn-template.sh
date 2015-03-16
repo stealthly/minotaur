@@ -31,8 +31,11 @@ echo BEGIN
 #HOSTED_ZONE_ID="{ "Ref": "HostedZoneId" }"
 #HOSTED_ZONE_NAME="{ "Ref": "HostedZoneName" }"
 #MESOS_DNS="{ "Ref": "MesosDns" }"
-#GAUNTLET="{ "Ref": "Gauntlet" }",
-#MIRRORMAKER="{ "Ref": "Mirrormaker" }",
+#GAUNTLET="{ "Ref": "Gauntlet" }"
+#MIRRORMAKER="{ "Ref": "Mirrormaker" }"
+#SPARK="{ "Ref": "Spark" }"
+#SPARK_VERSION="{ "Ref": "SparkVersion" }"
+#SPARK_URL="{ "Ref": "SparkUrl" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -113,6 +116,9 @@ hosted_zone_name="$HOSTED_ZONE_NAME" \
 mesos_dns="$MESOS_DNS" \
 gauntlet="$GAUNTLET" \
 mirrormaker="$MIRRORMAKER" \
+spark="$SPARK" \
+spark_version="$SPARK_VERSION" \
+spark_url="$SPARK_URL" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_slave.json"
 
 # Create route53 dns entry
