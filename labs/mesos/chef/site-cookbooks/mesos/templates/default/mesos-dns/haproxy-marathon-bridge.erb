@@ -101,6 +101,7 @@ EOF
 
 function config {
   header
+  sparks "$@"
   apps "$@"
   backend "$@"
   frontend "$@"
@@ -131,6 +132,32 @@ listen stats
 EOF
 }
 
+function sparks {
+  (until curl -sSfLk -m 10 -H 'Accept: text/plain' ${mesos_leader}:5050/master/state.json | jq -r .slaves[].hostname; do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  do
+    set -- $txt
+    if [ $# -lt 1 ]; then
+      shift $#
+      continue
+    fi
+
+    local server_ip=$(echo $1 | sed -e 's/[a-z.]//g' -e 's/^-//g' -e 's/[\-]/\./g')
+    shift 1
+
+    cat <<EOF
+
+listen spark-4040
+  bind 0.0.0.0:4040
+  mode tcp
+  option tcplog
+  balance leastconn
+EOF
+    if [[ $(curl -sSfL ${server_ip}:4040) != *curl*Failed* ]]; then
+      out "  server spark-$# $server_ip check"
+    fi
+  done
+}
+
 function apps {
   (until curl -sSfLk -m 10 -H 'Accept: text/plain' "${1%/}"/v2/tasks; do [ $# -lt 2 ] && return 1 || shift; done) | while read -r txt
   do
@@ -156,7 +183,7 @@ listen $app_name-$app_port
 EOF
       while [[ $# -ne 0 ]]
       do
-        out "  server ${app_name}-$# $1 check"
+        out "  server ${app_name}-$# $( echo $1 | sed -e 's/[a-z.]//g' -e 's/^\-//g' -e 's/[\-]/\./g' ) check"
         shift
       done
     fi
