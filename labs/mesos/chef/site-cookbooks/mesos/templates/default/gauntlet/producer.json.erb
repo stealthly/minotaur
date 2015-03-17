@@ -1,0 +1,7 @@
+{
+  "id": "producer",
+  "cmd": "cd /opt/gauntlet && ./gradlew jar && ./run.sh --client.runner \"mirror_maker --prefix mirror_ --consumer.config /tmp/consumer.config --num.streams 2 --producer.config /tmp/producer.config --whitelist=\\\"^dataset\\\"\"",
+  "instances": 1,
+  "cpus": 1,
+  "mem": 1024
+}

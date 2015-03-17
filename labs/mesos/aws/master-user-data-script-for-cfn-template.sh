@@ -40,6 +40,7 @@ echo BEGIN
 #SPARK_VERSION="{ "Ref": "SparkVersion" }"
 #SPARK_URL="{ "Ref": "SparkUrl" }"
 #GAUNTLET="{ "Ref": "Gauntlet" }"
+#CHRONOS="{ "Ref": "Chronos" }"
 #INSTANCE_WAIT_HANDLE_URL="{ "Ref": "WaitForInstanceWaitHandle" }"
 
 WORKING_DIR="/deploy"
@@ -120,6 +121,7 @@ spark="$SPARK" \
 spark_version="$SPARK_VERSION" \
 spark_url="$SPARK_URL" \
 gauntlet="$GAUNTLET" \
+chronos="$CHRONOS" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_master.json"
 
 # Create route53 dns entry
@@ -129,8 +131,18 @@ aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --chang
 sleep $((RANDOM%30+30))
 
 # Start mesos-dns on marathon
-if [[ $MESOS_DNS == true && $(curl 127.0.0.1:8080/v2/apps) != *mesos-dns* ]]
-    then curl -X POST -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
+if [[ $MESOS_DNS == true && $MARATHON == true && $(curl 127.0.0.1:8080/v2/apps) != *mesos-dns* ]]
+    then curl -X POST -L -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/mesos-dns.json
+fi
+
+# Start producer on marathon
+if [[ $GAUNTLET == true && $MARATHON == true && $(curl 127.0.0.1:8080/v2/apps) != *producer* ]]
+    then curl -X POST -L -H "Content-Type: application/json" http://127.0.0.1:8080/v2/apps -d@/tmp/producer.json
+fi
+
+# Start gauntlet framework on chronos
+if [[ $GAUNTLET == true && $CHRONOS == true && $(curl 127.0.0.1:8081/scheduler/jobs) != *gauntlet* ]]
+    then curl -X POST -L -H 'Content-Type: application/json' http://127.0.0.1:8081/scheduler/iso8601 -d@/tmp/gauntlet.json
 fi
 
 # Notify wait handle

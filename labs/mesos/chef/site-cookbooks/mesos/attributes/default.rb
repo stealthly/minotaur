@@ -52,6 +52,13 @@ default[:mesos][:spark][:install_dir] = '/opt/spark'
 default[:mesos][:spark][:version] = '1.2.1'
 default[:mesos][:spark][:tarball_url] = "https://dist.apache.org/repos/dist/release/spark/spark-#{node[:mesos][:spark][:version]}/spark-#{node[:mesos][:spark][:version]}-bin-cdh4.tgz"
 
+default[:mesos][:chronos][:tarball_url] = "#{node[:mesos][:mirror]}chronos/chronos-2.1.0_mesos-0.14.0-rc4.tgz"
+default[:mesos][:chronos][:install_dir] = "/opt/chronos"
+default[:mesos][:chronos][:log_dir] = "/var/log/chronos"
+default[:mesos][:chronos][:port] = 8081
+default[:mesos][:chronos][:java_heap] = "#{(node['memory']['total'].to_i - (node['memory']['total'].to_i / 2)) / 1024}m"
+default[:mesos][:chronos][:user] = 'root'
+
 default[:mesos][:mirrormaker][:bin_url] = "https://s3.amazonaws.com/bdoss-deploy/kafka/mirrormaker/mirror_maker"
 
 default[:mesos][:gauntlet][:install_dir] = '/opt/gauntlet'

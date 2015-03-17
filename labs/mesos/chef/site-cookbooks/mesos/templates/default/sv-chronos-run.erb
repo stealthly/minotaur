@@ -1,0 +1,33 @@
+#!/bin/bash
+set -o errexit -o nounset -o pipefail
+
+CHRONOS_HOME=<%= node[:mesos][:chronos][:install_dir] %>
+app_jar=$(find ${CHRONOS_HOME} -name "chronos-*.jar" | grep -v sources | head -n1)
+main=com.airbnb.scheduler.Main
+
+heap=<%= node[:mesos][:chronos][:java_heap] %>
+environment_directory=${CHRONOS_HOME}/environment
+ip=$(ifconfig | grep inet | grep -v inet6 | grep -v '127.0.0.1' | awk -F: '{ print $2 }' | awk '{ print $1 }')
+
+# Setup the libprocess ip
+echo "$ip" > "$environment_directory"/LIBPROCESS_IP
+jvm_options=( -cp "$app_jar" -server -Xmx"$heap" -Xms"$heap"
+-XX:+PrintClassHistogram
+)
+app_options=(<%= @options[:extra_opts] %>)
+
+function set_environment {
+MESOS_HOME=<%= @options[:mesos_home] %>
+libmesos_file=$(find ${MESOS_HOME} -name "libmesos.dylib" -or -name "libmesos.so" | head -n1)
+export MESOS_NATIVE_LIBRARY="${libmesos_file}"
+}
+
+function start {
+echo "$(date): $(env)"
+echo "$(date) [ulimit] $(ulimit -n)"
+exec chpst -u <%= node[:mesos][:chronos][:user] %> -e $environment_directory java "${jvm_options[@]}" "$main" "${app_options[@]}" 2>&1
+}
+
+set_environment
+start
+

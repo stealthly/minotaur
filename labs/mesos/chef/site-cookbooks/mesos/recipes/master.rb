@@ -92,7 +92,17 @@ if ENV['spark'] == 'true'
   include_recipe 'mesos::spark'
 end
 if ENV['gauntlet'] == 'true'
+  # Template producer(run.sh) task payload for marathon
+  template '/tmp/producer.json' do
+   source 'gauntlet/producer.json.erb'
+   variables(
+     gauntlet_install_dir: node['mesos']['gauntlet']['install_dir'],
+   )
+  end
   include_recipe 'mesos::gauntlet'
+end
+if ENV['chronos'] == 'true'
+  include_recipe 'mesos::chronos'
 end
 
 # Configure mesos with zookeeper server(s)
