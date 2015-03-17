@@ -84,6 +84,7 @@ kafka_brokers=$"$KAFKA_BROKERS" \
 chef-solo -c "$REPO_DIR/$LAB_PATH/chef/solo.rb" -j "$REPO_DIR/$LAB_PATH/chef/solo_kb.json"
 
 # Create default topics, such as "dataset" and "mirror_dataset"
+sleep 15
 /opt/apache/kafka/bin/kafka-topics.sh --create --topic dataset --partitions 1 --replication-factor 1 --zookeeper $(expr $ZK_SERVERS : '\([0-9\.]*\)')
 /opt/apache/kafka/bin/kafka-topics.sh --create --topic mirror_dataset --partitions 1 --replication-factor 1 --zookeeper $(expr $ZK_SERVERS : '\([0-9\.]*\)')
 

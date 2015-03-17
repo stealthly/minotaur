@@ -133,7 +133,7 @@ EOF
 }
 
 function sparks {
-  (until curl -sSfLk -m 10 -H 'Accept: text/plain' ${mesos_leader}:5050/master/state.json | jq -r .slaves[].hostname; do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
+  (until curl -sSfLk -m 10 -H 'Accept: text/plain' http://${mesos_leader}/master/state.json | $JQ -r .slaves[].hostname; do [ $# -lt 1 ] && return 1 || shift; done) | while read -r txt
   do
     set -- $txt
     if [ $# -lt 1 ]; then
@@ -144,7 +144,8 @@ function sparks {
     local server_ip=$(echo $1 | sed -e 's/[a-z.]//g' -e 's/^-//g' -e 's/[\-]/\./g')
     shift 1
 
-    cat <<EOF
+    if [[ $(curl -sfL ${server_ip}:4040 >/dev/null; echo $?) -eq 0 ]]; then
+      cat <<EOF
 
 listen spark-4040
   bind 0.0.0.0:4040
@@ -152,7 +153,6 @@ listen spark-4040
   option tcplog
   balance leastconn
 EOF
-    if [[ $(curl -sSfL ${server_ip}:4040) != *curl*Failed* ]]; then
       out "  server spark-$# $server_ip check"
     fi
   done

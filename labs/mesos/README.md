@@ -4,19 +4,21 @@ This directory contains AWS, Chef and Vagrant scripts/recipes/templates to spin 
 
 ## Usage
 ```
-usage: minotaur lab deploy mesos master [-h] [--debug] [--mesos-dns] [--gauntlet] -e
+usage: minotaur lab deploy mesos master [-h] [--debug] [--mesos-dns] [--gauntlet] [--spark] -e
                                         ENVIRONMENT -d DEPLOYMENT -r REGION -z
                                         AVAILABILITY_ZONE -o HOSTED_ZONE [-n NUM_NODES]
-                                        [-i INSTANCE_TYPE] [-m MESOS_VERSION] [-v ZK_VERSION]
-                                        [-a AURORA_URL] [-t MARATHON_VERSION]
-                                        [-s SPARK_VERSION] [--spark-url SPARK_URL] [--marathon]
-                                        [--aurora] [--slave-on-master] [--spark]
+                                        [-i INSTANCE_TYPE] [-m MESOS_VERSION]
+                                        [-v {3.3.6,3.4.6,3.5.0-alpha}] [-s SPARK_VERSION]
+                                        [--spark-url SPARK_URL] [-a AURORA_URL]
+                                        [-t MARATHON_VERSION] [--marathon] [--aurora]
+                                        [--slave-on-master] [--chronos]
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Enable debug mode
   --mesos-dns           Use this flag to deploy Mesos-DNS on Marathon
   --gauntlet            Use this flag to deploy Gauntlet framework
+  --spark               Use this flag to deploy Spark framework
   -e ENVIRONMENT, --environment ENVIRONMENT
                         CloudFormation environment to deploy to
   -d DEPLOYMENT, --deployment DEPLOYMENT
@@ -33,7 +35,7 @@ optional arguments:
                         AWS EC2 instance type to deploy
   -m MESOS_VERSION, --mesos-version MESOS_VERSION
                         The Mesos version to deploy
-  -v ZK_VERSION, --zk-version ZK_VERSION
+  -v {3.3.6,3.4.6,3.5.0-alpha}, --zk-version {3.3.6,3.4.6,3.5.0-alpha}
                         The Zookeeper version to deploy
   -a AURORA_URL, --aurora-url AURORA_URL
                         The Aurora scheduler URL
@@ -46,20 +48,23 @@ optional arguments:
   --marathon            Use this flag to deploy Marathon framework
   --aurora              Use this flag to deploy Aurora framework
   --slave-on-master     Use this flag to deploy Mesos slaves on master nodes
-  --spark               Use this flag to deploy Spark framework
+  --chronos             Use this flag to deploy Chronos framework
 ```
 
 ```
-usage: minotaur lab deploy mesos slave [-h] [--debug] [--mesos-dns] [--gauntlet] -e ENVIRONMENT
-                                       -d DEPLOYMENT -r REGION -z AVAILABILITY_ZONE -o
-                                       HOSTED_ZONE [-n NUM_NODES] [-i INSTANCE_TYPE]
-                                       [-m MESOS_VERSION] [-v ZK_VERSION] [--mirrormaker]
+usage: minotaur lab deploy mesos slave [-h] [--debug] [--mesos-dns] [--gauntlet] [--spark] -e
+                                       ENVIRONMENT -d DEPLOYMENT -r REGION -z AVAILABILITY_ZONE
+                                       -o HOSTED_ZONE [-n NUM_NODES] [-i INSTANCE_TYPE]
+                                       [-m MESOS_VERSION] [-v {3.3.6,3.4.6,3.5.0-alpha}]
+                                       [-s SPARK_VERSION] [--spark-url SPARK_URL]
+                                       [--mirrormaker]
 
 optional arguments:
   -h, --help            show this help message and exit
   --debug               Enable debug mode
   --mesos-dns           Use this flag to deploy Mesos-DNS on Marathon
   --gauntlet            Use this flag to deploy Gauntlet framework
+  --spark               Use this flag to deploy Spark framework
   -e ENVIRONMENT, --environment ENVIRONMENT
                         CloudFormation environment to deploy to
   -d DEPLOYMENT, --deployment DEPLOYMENT
@@ -76,8 +81,12 @@ optional arguments:
                         AWS EC2 instance type to deploy
   -m MESOS_VERSION, --mesos-version MESOS_VERSION
                         The Mesos version to deploy
-  -v ZK_VERSION, --zk-version ZK_VERSION
+  -v {3.3.6,3.4.6,3.5.0-alpha}, --zk-version {3.3.6,3.4.6,3.5.0-alpha}
                         The Zookeeper version to deploy
+  -s SPARK_VERSION, --spark-version SPARK_VERSION
+                        The Spark version to deploy
+  --spark-url SPARK_URL
+                        URL of custom Spark binaries tarball
   --mirrormaker         Use this flag to deploy Mirrormaker
 ```
 
@@ -133,7 +142,47 @@ If you want to remove your deployment - just delete a corresponding CloudFormati
 
 *NOTICE:* Currently only corse mode is supported in spark framework on mesos.
 
-To run kafka test framework:
+## Kafka test framework labs deployment procedure (automated mode)
+
+1. Deploy labs
+  ```
+  minotaur lab deploy cassandra -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  minotaur lab deploy zookeeper -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  minotaur lab deploy kafka -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  ```
+
+2. Wait untill zookeeper and kafka are deployed and deploy mesos master
+  ```
+  minotaur lab deploy mesos master --marathon --spark --gauntlet --chronos -e bdoss-dev -d test -r us-east-1 -z us-east-1a -o bdoss.org -i m1.small
+  ```
+
+3. Wait few minutes and deploy mesos slave
+  ```
+  minotaur lab deploy mesos slave --gauntlet --mirrormaker --spark -e bdoss-dev -d test -r us-east-1 -z us-east-1a -o bdoss.org -i m3.xlarge
+  ```
+
+This will spawn cassandra, zookeeper and kafka servers(topic "dataset" and "mirror_dataset" will be created in kafka too), spawn mesos master node with marathon (which will run kafka producer) and chronos (which will wait 10-15 minutes and then destroy kafka producer and run kafka test framework - gauntlet with mirror_maker as client.runner) frameworks and spawn mesos slave instance (m3.xlarge is the smallest one which can process generated data). After some time (up to 20 minutes after deployment will finish, you can access slave instance via ssh and check file with test results under /opt/gauntlet/ directory). Also you can access spark ui via http://master0.bdoss.org:4040 when kafka test framework will be running on a slave.
+
+## Kafka test framework labs deployment procedure (manual mode)
+
+1. Deploy labs
+  ```
+  minotaur lab deploy cassandra -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  minotaur lab deploy zookeeper -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  minotaur lab deploy kafka -e bdoss-dev -d test -r us-east-1 -z us-east-1a
+  ```
+
+2. Wait untill zookeeper and kafka are deployed and deploy mesos master
+  ```
+  minotaur lab deploy mesos master --marathon --spark --gauntlet -e bdoss-dev -d test -r us-east-1 -z us-east-1a -o bdoss.org -i m1.small
+  ```
+
+3. Wait few minutes and deploy mesos slave
+  ```
+  minotaur lab deploy mesos slave --gauntlet --mirrormaker -e bdoss-dev -d test -r us-east-1 -z us-east-1a -o bdoss.org -i m3.xlarge
+  ```
+
+*NOTICE:* The first two steps are optional - kafka topics will be created by default and kafka producer will be launched by default too. Follow the first two steps only if you want to use non-default topics or custom --client.runner.
 
 1. Create topics in kafka: ssh into kafka instance and run the following, e.g.
   ```
