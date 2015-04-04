@@ -15,6 +15,11 @@
       "Description": "AWS Access Secret Key",
       "Type": "String"
     },
+    "S3Config": {
+      "Description": "The S3 bucket name and key to store exhibitor config, in the format [bucket name]:[key]",
+      "Type": "String",
+      "Default": "kafka-exhibitor:example"
+    },
     "InstanceType" : {
       "Description" : "WebServer EC2 instance type",
       "Type" : "String",
@@ -98,7 +103,7 @@
                   "echo log-index-directory=/var/log/zookeeper/indeces | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
                   "echo auto-manage-instances=1 | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
                   "echo servers-spec=S:1:$(curl -s http://169.254.169.254/latest/meta-data/public-hostname) | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
-                  "java -jar /opt/exhibitor/build/libs/exhibitor-*-all.jar --defaultconfig /opt/exhibitor/exhibitor.properties --hostname $(curl -s http://169.254.169.254/latest/meta-data/public-hostname) --configtype s3 --s3credentials /opt/exhibitor/exhibitor.s3.properties --s3config kafka-exhibitor:test &> /tmp/exhibitor.log &\n"
+                  "java -jar /opt/exhibitor/build/libs/exhibitor-*-all.jar --defaultconfig /opt/exhibitor/exhibitor.properties --hostname $(curl -s http://169.254.169.254/latest/meta-data/public-hostname) --configtype s3 --s3credentials /opt/exhibitor/exhibitor.s3.properties --s3config ", { "Ref": "S3Config" }, " &> /tmp/exhibitor.log &\n"
                 ]
               ]
             }
