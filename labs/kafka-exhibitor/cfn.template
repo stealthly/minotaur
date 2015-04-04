@@ -7,6 +7,14 @@
       "Type": "AWS::EC2::KeyPair::KeyName",
       "ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
     },
+    "AWSAccessKeyId": {
+      "Description": "AWS Access Key Id",
+      "Type": "String"
+    },
+    "AWSAccessSecretKey": {
+      "Description": "AWS Access Secret Key",
+      "Type": "String"
+    },
     "InstanceType" : {
       "Description" : "WebServer EC2 instance type",
       "Type" : "String",
@@ -30,7 +38,7 @@
       "Default": "0.0.0.0/0"
     },
     "TCPIngressCIDRBlock" : {
-      "Description": "IP CIDR Block allowed incoming TCP connections on ports 1024-49151",
+      "Description": "IP CIDR Block allowed incoming TCP connections on ports 1024-65535",
       "Type": "String",
       "Default": "0.0.0.0/0"
     }
@@ -82,8 +90,8 @@
                 [
                   "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1",
                   "\n",
-                  "echo com.netflix.exhibitor.s3.access-key-id=AKIAIDTAX7OF4NQMT3PA | sudo tee /opt/exhibitor/exhibitor.s3.properties\n",
-                  "echo com.netflix.exhibitor.s3.access-secret-key=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 >> /opt/exhibitor/exhibitor.s3.properties\n",
+                  "echo com.netflix.exhibitor.s3.access-key-id=", { "Ref": "AWSAccessKeyId"}, " | sudo tee /opt/exhibitor/exhibitor.s3.properties\n",
+                  "echo com.netflix.exhibitor.s3.access-secret-key=", { "Ref": "AWSAccessSecretKey" }, " | sudo tee -a /opt/exhibitor/exhibitor.s3.properties\n",
                   "echo zookeeper-data-directory=/var/lib/zookeeper | sudo tee /opt/exhibitor/exhibitor.properties\n",
                   "echo zookeeper-install-directory=/etc/zookeeper | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
                   "echo zookeeper-log-directory=/var/log/zookeeper | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
