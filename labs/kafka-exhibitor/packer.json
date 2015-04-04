@@ -1,0 +1,63 @@
+{
+  "variables": {
+    "kafka_version": "",
+    "exhibitor_version": "",
+    "docker_version": "1.5.0"
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "access_key": "AKIAIDTAX7OF4NQMT3PA",
+      "secret_key": "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",
+      "region": "us-west-1",
+      "source_ami": "ami-5c120b19",
+      "instance_type": "t2.small",
+      "ssh_username": "ubuntu",
+      "ami_name": "kafka-ubuntu14.04-{{isotime | clean_ami_name}}",
+      "ami_description": "Kafka+Exhibitor on Ubuntu 14.04 LTS",
+      "ami_regions": [],
+      "ami_groups": "all",
+      "tags": {
+        "os:distribution": "Ubuntu",
+        "os:release": "14.04 LTS",
+        "mesos:version": "{{user `kafka_version`}}",
+        "docker:version": "{{user `exhibitor_version`}}"
+      }
+    },
+    {
+      "type": "virtualbox-iso",
+      "guest_os_type": "Ubuntu_64",
+      "headless": false,
+      "disk_size": 10240,
+      "iso_url": "http://releases.ubuntu.com/14.04/ubuntu-14.04.1-server-amd64.iso",
+      "iso_checksum": "ca2531b8cd79ea5b778ede3a524779b9",
+      "iso_checksum_type": "md5",
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+      "ssh_wait_timeout": "600s",
+      "http_directory": "http",
+      "boot_wait": "10s",
+      "boot_command": [
+        "<esc><esc><enter><wait>",
+        "/install/vmlinuz noapic preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
+        "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
+        "hostname={{ .Name }} ",
+        "fb=false debconf/frontend=noninteractive ",
+        "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA keyboard-configuration/variant=USA console-setup/ask_detect=false ",
+        "initrd=/install/initrd.gz -- <enter>"
+      ],
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--cpus", "1"],
+        ["modifyvm", "{{.Name}}", "--memory", "1024"]
+      ],
+      "shutdown_command": "echo 'packer' | sudo -S shutdown -P now"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "scripts": ["provision.sh"]
+    }
+  ]
+}

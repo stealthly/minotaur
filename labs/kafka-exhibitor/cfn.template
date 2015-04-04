@@ -1,0 +1,113 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Description" : "Kafka + Exhibitor",
+  "Parameters" : {
+    "KeyName": {
+      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair."
+    },
+    "InstanceType" : {
+      "Description" : "WebServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.small",
+      "AllowedValues" : [ "t2.micro", "t2.small", "t2.medium", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge" ],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+    "InstanceCount" : {
+      "Description": "Number of initial Kafka/Exhibitor instances",
+      "Type": "Number",
+      "Default": "3"
+    },
+    "InstanceSize" : {
+      "Description": "GB of elastic-backed storage to allocate to each instance",
+      "Type": "Number",
+      "Default": "8"
+    },
+    "SSHIngressCIDRBlock" : {
+      "Description": "IP CIDR Block allowed incoming TCP connections on port 22 (SSH)",
+      "Type": "String",
+      "Default": "0.0.0.0/0"
+    },
+    "TCPIngressCIDRBlock" : {
+      "Description": "IP CIDR Block allowed incoming TCP connections on ports 1024-49151",
+      "Type": "String",
+      "Default": "0.0.0.0/0"
+    }
+  },
+
+  "Mappings" : {
+    "KafkaExhibitorMap": {
+      "us-west-1": { "ImageId": "ami-73658537" }
+    }
+  },
+
+  "Resources" : {
+    "BasicSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "default",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": { "Ref" : "SSHIngressCIDRBlock" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "1024",
+            "ToPort": "65535",
+            "CidrIp": { "Ref" : "TCPIngressCIDRBlock" }
+          }
+        ],
+        "Tags": [{ "Key": "Name", "Value": "kafka+exhibitor" }]
+      }
+    },
+    "KafkaExhibitorLC" : {
+       "Type" : "AWS::AutoScaling::LaunchConfiguration",
+       "Properties" : {
+          "BlockDeviceMappings": [{
+            "DeviceName": "/dev/sda1",
+            "Ebs" : {"VolumeSize": { "Ref": "InstanceSize" }}
+          }],
+          "ImageId" : { "Fn::FindInMap" : [ "KafkaExhibitorMap", { "Ref" : "AWS::Region" }, "ImageId" ] },
+          "InstanceType" : { "Ref" : "InstanceType" },
+          "KeyName" : { "Ref" : "KeyName" },
+          "SecurityGroups": [{ "Ref": "BasicSG" }],
+          "UserData": {
+            "Fn::Base64": {
+              "Fn::Join": [
+                "",
+                [
+                  "#!/bin/bash -ex\nexec > >(tee /var/log/user-data.log) 2>&1",
+                  "\n",
+                  "echo com.netflix.exhibitor.s3.access-key-id=AKIAIDTAX7OF4NQMT3PA | sudo tee /opt/exhibitor/exhibitor.s3.properties\n",
+                  "echo com.netflix.exhibitor.s3.access-secret-key=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 >> /opt/exhibitor/exhibitor.s3.properties\n",
+                  "echo zookeeper-data-directory=/var/lib/zookeeper | sudo tee /opt/exhibitor/exhibitor.properties\n",
+                  "echo zookeeper-install-directory=/etc/zookeeper | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
+                  "echo zookeeper-log-directory=/var/log/zookeeper | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
+                  "echo log-index-directory=/var/log/zookeeper/indeces | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
+                  "echo auto-manage-instances=1 | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
+                  "echo servers-spec=S:1:$(curl -s http://169.254.169.254/latest/meta-data/public-hostname) | sudo tee -a /opt/exhibitor/exhibitor.properties\n",
+                  "java -jar /opt/exhibitor/build/libs/exhibitor-*-all.jar --defaultconfig /opt/exhibitor/exhibitor.properties --hostname $(curl -s http://169.254.169.254/latest/meta-data/public-hostname) --configtype s3 --s3credentials /opt/exhibitor/exhibitor.s3.properties --s3config kafka-exhibitor:test &> /tmp/exhibitor.log &\n"
+                ]
+              ]
+            }
+          }
+       }
+    },
+    "KafkaExhibitorASG" : {
+      "Type" : "AWS::AutoScaling::AutoScalingGroup",
+      "DependsOn": "KafkaExhibitorLC",
+      "Properties" : {
+        "AvailabilityZones" : { "Fn::GetAZs" : { "Ref" : "AWS::Region" } },
+        "LaunchConfigurationName" : { "Ref" : "KafkaExhibitorLC" },
+        "MinSize" : "1",
+        "MaxSize" : "5",
+        "DesiredCapacity" : { "Ref" : "InstanceCount" }
+      }
+    }
+  },
+  "Outputs" : { }
+}
