@@ -1,0 +1,30 @@
+{
+  "variables": {
+    "kafka_version": "0.8.2.1"
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "region": "us-west-1",
+      "source_ami": "ami-5c120b19",
+      "instance_type": "t2.small",
+      "ssh_username": "ubuntu",
+      "ami_name": "kafka-ubuntu14.04-{{isotime | clean_ami_name}}",
+      "ami_description": "Kafka+Exhibitor on Ubuntu 14.04 LTS",
+      "ami_regions": [],
+      "ami_groups": "all",
+      "tags": {
+        "os:distribution": "Ubuntu",
+        "os:release": "14.04 LTS",
+        "kafka:version": "{{user `kafka_version`}}"
+      }
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "scripts": ["provision.sh"]
+    }
+  ]
+}
