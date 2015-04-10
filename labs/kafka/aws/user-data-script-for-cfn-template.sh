@@ -19,7 +19,7 @@
 # This script is meant to be JSON escaped and pasted into an AWS CloudFormation
 # instance's UserData property.
 
-exec > >(tee /var/log/user-data.log) 2>&1
+exec &> >(tee /var/log/user-data.log)
 
 echo BEGIN
 
